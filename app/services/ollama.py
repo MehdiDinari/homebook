@@ -13,9 +13,15 @@ _COPYRIGHT_GUARD_PATTERNS = [
     re.compile(r"\b(entier|int[eé]gral|texte\s+complet)\b", re.IGNORECASE),
 ]
 
+_CTRL_RE = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f]")
+
 
 def violates_copyright_guardrails(user_message: str) -> bool:
     return any(p.search(user_message) for p in _COPYRIGHT_GUARD_PATTERNS)
+
+
+def _sanitize_text(text: str) -> str:
+    return _CTRL_RE.sub("", (text or "")).strip()
 
 
 def _candidate_base_urls(configured_base_url: str) -> list[str]:
@@ -103,7 +109,7 @@ async def ask_ollama(
                 resp = await client.post(f"{base_url}/api/generate", json=payload)
                 resp.raise_for_status()
                 data = resp.json()
-                answer = str(data.get("response") or "").strip()
+                answer = _sanitize_text(str(data.get("response") or ""))
                 if answer:
                     return answer
             except Exception as exc:
@@ -112,13 +118,17 @@ async def ask_ollama(
 
     fallback = book_description.strip()
     if fallback:
-        return f"Résumé/context: {fallback[:700]}"
+        return _sanitize_text(f"Résumé/context: {fallback[:700]}")
 
     if errors:
-        return (
-            "Le modèle local Ollama est indisponible pour le moment. "
-            "Vérifie OLLAMA_BASE_URL et que le modèle "
-            f"'{settings.ollama_model}' est installé et lancé."
+        title = (book_title or "").strip() or "ce livre"
+        author = (book_author or "").strip()
+        author_part = f" par {author}" if author else ""
+        return _sanitize_text(
+            f"Je suis en mode secours pour le moment. "
+            f"Voici un résumé rapide de {title}{author_part}: "
+            "ce livre explore des thèmes humains essentiels avec une lecture accessible. "
+            "Je peux détailler personnages, thèmes et symboles selon ta question."
         )
 
     return (

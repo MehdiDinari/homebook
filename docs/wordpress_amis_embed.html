@@ -1,0 +1,784 @@
+<div id="hb-friends-page" class="hba" data-api-base="" data-messages-url="/messages/" data-salle-url="/salle/">
+  <header class="hba-hero">
+    <div>
+      <h1>Amis</h1>
+      <p class="hba-muted">Gere tes amis, les demandes et demarre une discussion privee.</p>
+      <div class="hba-chips">
+        <span class="hba-chip">API: <b id="hba-api">-</b></span>
+        <span class="hba-chip">Amis: <b id="hba-count-friends">0</b></span>
+        <span class="hba-chip">Entrantes: <b id="hba-count-incoming">0</b></span>
+        <span class="hba-chip">Sortantes: <b id="hba-count-outgoing">0</b></span>
+        <span class="hba-chip">Etat: <b id="hba-state">Pret</b></span>
+      </div>
+    </div>
+    <div class="hba-actions">
+      <a id="hba-go-messages" class="hba-btn" href="/messages/">Messages</a>
+      <button id="hba-refresh" class="hba-btn hba-btn-primary" type="button">Actualiser</button>
+    </div>
+  </header>
+
+  <div id="hba-alert" class="hba-alert" style="display:none"></div>
+
+  <section class="hba-grid hba-grid-two">
+    <article class="hba-card">
+      <div class="hba-card-head">
+        <h2>Rechercher des personnes</h2>
+        <p>Ajoute des amis puis ouvre un message prive.</p>
+      </div>
+      <div class="hba-card-body">
+        <input id="hba-search" class="hba-input" type="search" placeholder="Nom, email..." />
+        <div id="hba-search-results" class="hba-list">
+          <div class="hba-empty">Tape au moins 2 caracteres.</div>
+        </div>
+      </div>
+    </article>
+
+    <article class="hba-card">
+      <div class="hba-card-head">
+        <h2>Demandes recues</h2>
+        <p>Accepte ou refuse les demandes entrantes.</p>
+      </div>
+      <div class="hba-card-body">
+        <div id="hba-incoming" class="hba-list">
+          <div class="hba-empty">Aucune demande recue.</div>
+        </div>
+      </div>
+    </article>
+
+    <article class="hba-card">
+      <div class="hba-card-head">
+        <h2>Mes amis</h2>
+        <p>Lance un message prive ou retire un ami.</p>
+      </div>
+      <div class="hba-card-body">
+        <div id="hba-friends" class="hba-list">
+          <div class="hba-empty">Aucun ami.</div>
+        </div>
+      </div>
+    </article>
+
+    <article class="hba-card">
+      <div class="hba-card-head">
+        <h2>Demandes envoyees</h2>
+        <p>Annule les demandes en attente si besoin.</p>
+      </div>
+      <div class="hba-card-body">
+        <div id="hba-outgoing" class="hba-list">
+          <div class="hba-empty">Aucune demande envoyee.</div>
+        </div>
+      </div>
+    </article>
+  </section>
+</div>
+
+<style>
+  #hb-friends-page.hba {
+    --bg: #f4f8ff;
+    --card: #ffffff;
+    --text: #10243d;
+    --muted: #5f7085;
+    --stroke: #d7e4f6;
+    --navy: #0f3d69;
+    --navy2: #1c5d98;
+    --warn: #b45309;
+    font-family: "DM Sans", "Segoe UI", system-ui, sans-serif;
+    color: var(--text);
+    background:
+      radial-gradient(920px 410px at -10% -30%, rgba(28, 93, 152, 0.16), transparent 60%),
+      radial-gradient(920px 360px at 110% -20%, rgba(15, 61, 105, 0.14), transparent 58%),
+      var(--bg);
+    border: 1px solid var(--stroke);
+    border-radius: 22px;
+    padding: 18px;
+    box-shadow: 0 20px 54px rgba(15, 33, 58, 0.09);
+  }
+
+  #hb-friends-page * { box-sizing: border-box; }
+
+  #hb-friends-page .hba-hero {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+  }
+
+  #hb-friends-page h1 {
+    margin: 0;
+    font-size: clamp(24px, 4vw, 34px);
+    letter-spacing: -0.03em;
+    color: var(--navy);
+    line-height: 1.05;
+  }
+
+  #hb-friends-page .hba-muted {
+    margin: 8px 0 0;
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  #hb-friends-page .hba-chips {
+    margin-top: 10px;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  #hb-friends-page .hba-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px solid var(--stroke);
+    border-radius: 999px;
+    background: #fff;
+    padding: 7px 10px;
+    font-size: 12px;
+    color: var(--muted);
+    font-weight: 700;
+  }
+
+  #hb-friends-page .hba-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  #hb-friends-page .hba-btn,
+  #hb-friends-page .hba-mini-btn {
+    border: 1px solid #c8daef;
+    border-radius: 12px;
+    background: #f3f8ff;
+    color: var(--navy);
+    font-size: 13px;
+    font-weight: 800;
+    cursor: pointer;
+    padding: 10px 12px;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+  }
+
+  #hb-friends-page .hba-btn-primary,
+  #hb-friends-page .hba-mini-btn.primary {
+    color: #fff;
+    border-color: rgba(15, 61, 105, 0.45);
+    background: linear-gradient(180deg, var(--navy2), var(--navy));
+  }
+
+  #hb-friends-page .hba-alert {
+    margin-bottom: 10px;
+    border-radius: 10px;
+    border: 1px solid #efb6b6;
+    background: #fff2f2;
+    color: #7f1d1d;
+    font-size: 12px;
+    padding: 9px 10px;
+  }
+
+  #hb-friends-page .hba-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  #hb-friends-page .hba-grid-two {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  #hb-friends-page .hba-card {
+    border: 1px solid var(--stroke);
+    border-radius: 18px;
+    background: var(--card);
+    box-shadow: 0 12px 34px rgba(15, 33, 58, 0.08);
+    overflow: hidden;
+  }
+
+  #hb-friends-page .hba-card-head {
+    padding: 14px;
+    border-bottom: 1px solid var(--stroke);
+    background: linear-gradient(180deg, #fff, #f9fcff);
+  }
+
+  #hb-friends-page .hba-card-head h2 {
+    margin: 0;
+    font-size: 16px;
+    color: var(--navy);
+  }
+
+  #hb-friends-page .hba-card-head p {
+    margin: 6px 0 0;
+    color: var(--muted);
+    font-size: 12px;
+  }
+
+  #hb-friends-page .hba-card-body { padding: 14px; }
+
+  #hb-friends-page .hba-input {
+    width: 100%;
+    border: 1px solid #c6d9ef;
+    border-radius: 10px;
+    background: #fff;
+    padding: 10px 11px;
+    font-size: 14px;
+    color: var(--text);
+    outline: none;
+    margin-bottom: 10px;
+  }
+
+  #hb-friends-page .hba-input:focus {
+    border-color: #2a6ba8;
+    box-shadow: 0 0 0 4px rgba(26, 86, 143, 0.16);
+  }
+
+  #hb-friends-page .hba-list {
+    display: grid;
+    gap: 8px;
+  }
+
+  #hb-friends-page .hba-empty {
+    border: 1px dashed #cfe0f5;
+    border-radius: 12px;
+    background: #fff;
+    color: var(--muted);
+    font-size: 13px;
+    padding: 12px;
+  }
+
+  #hb-friends-page .hba-user {
+    border: 1px solid #d4e2f5;
+    border-radius: 12px;
+    background: #fbfdff;
+    padding: 10px;
+    display: grid;
+    gap: 8px;
+  }
+
+  #hb-friends-page .hba-user-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  #hb-friends-page .hba-user-title {
+    margin: 0;
+    font-size: 14px;
+    color: var(--text);
+    font-weight: 800;
+  }
+
+  #hb-friends-page .hba-user-meta {
+    margin: 0;
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  #hb-friends-page .hba-role {
+    display: inline-flex;
+    border-radius: 999px;
+    border: 1px solid #d4e2f5;
+    background: #fff;
+    color: #4f657f;
+    font-size: 11px;
+    padding: 5px 8px;
+    font-weight: 800;
+  }
+
+  #hb-friends-page .hba-user-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  #hb-friends-page .hba-mini-btn {
+    font-size: 12px;
+    border-radius: 9px;
+    padding: 8px 10px;
+  }
+
+  @media (max-width: 980px) {
+    #hb-friends-page .hba-grid-two { grid-template-columns: 1fr; }
+  }
+</style>
+
+<script>
+(() => {
+  if (window.__HB_FRIENDS_PAGE_INIT__) return;
+  window.__HB_FRIENDS_PAGE_INIT__ = true;
+
+  const root = document.getElementById("hb-friends-page");
+  if (!root) return;
+
+  const HB = window.HB_CONFIG || {};
+
+  const elApi = root.querySelector("#hba-api");
+  const elState = root.querySelector("#hba-state");
+  const elAlert = root.querySelector("#hba-alert");
+  const elSearch = root.querySelector("#hba-search");
+  const elSearchResults = root.querySelector("#hba-search-results");
+  const elIncoming = root.querySelector("#hba-incoming");
+  const elOutgoing = root.querySelector("#hba-outgoing");
+  const elFriends = root.querySelector("#hba-friends");
+  const elRefresh = root.querySelector("#hba-refresh");
+
+  const elCountFriends = root.querySelector("#hba-count-friends");
+  const elCountIncoming = root.querySelector("#hba-count-incoming");
+  const elCountOutgoing = root.querySelector("#hba-count-outgoing");
+
+  const goMessages = root.querySelector("#hba-go-messages");
+  goMessages.href = String(root.getAttribute("data-messages-url") || "/messages/").trim();
+
+  const SALLE_URL = String(root.getAttribute("data-salle-url") || "/salle/").trim();
+
+  const state = {
+    user: null,
+    loading: false,
+    friends: [],
+    incoming: [],
+    outgoing: [],
+    searchRows: [],
+  };
+
+  function normalizeBase(v) {
+    return String(v || "").trim().replace(/\/+$/, "");
+  }
+
+  function normalizeApiBase(raw) {
+    const b = normalizeBase(raw);
+    if (!b) return "/api/v1";
+    if (/\/api\/v1$/i.test(b)) return b;
+    if (/\/api$/i.test(b)) return b + "/v1";
+    if (/^https?:\/\//i.test(b) || b.startsWith("/")) return b + "/api/v1";
+    return "/api/v1";
+  }
+
+  const API_BASE = normalizeApiBase(HB.apiBase || root.getAttribute("data-api-base") || "");
+  if (elApi) elApi.textContent = API_BASE.replace(/^https?:\/\//, "");
+
+  function esc(v) {
+    return String(v == null ? "" : v)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/\"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
+  function setState(text) {
+    if (elState) elState.textContent = text || "Pret";
+  }
+
+  function showAlert(msg) {
+    if (!msg) {
+      elAlert.style.display = "none";
+      elAlert.textContent = "";
+      return;
+    }
+    elAlert.textContent = String(msg);
+    elAlert.style.display = "block";
+  }
+
+  function token() {
+    return String(HB.token || "").trim();
+  }
+
+  function getInjectedUser() {
+    const u = HB.currentUser || window.HB_USER || null;
+    if (!u) return null;
+    return {
+      wp_id: u.wp_user_id || u.id || u.user_id || null,
+      id: u.id || u.wp_user_id || u.user_id || null,
+      user_id: u.user_id || u.id || u.wp_user_id || null,
+      email: u.email || u.user_email || "",
+      roles: Array.isArray(u.roles) ? u.roles : [],
+    };
+  }
+
+  function rolesList() {
+    const raw = (state.user && (state.user.roles || state.user.role)) || [];
+    return (Array.isArray(raw) ? raw : [raw]).map((x) => String(x || "").toLowerCase()).filter(Boolean);
+  }
+
+  function headers(withJson) {
+    const h = { Accept: "application/json" };
+    if (withJson) h["Content-Type"] = "application/json";
+
+    const t = token();
+    if (t) h["Authorization"] = "Bearer " + t;
+
+    if (state.user) {
+      const wpId = state.user.wp_id || state.user.id || state.user.user_id;
+      if (wpId != null) h["X-WP-User-Id"] = String(wpId);
+      if (state.user.email) h["X-User-Email"] = String(state.user.email);
+      const roles = rolesList();
+      if (roles.length) h["X-WP-User-Roles"] = roles.join(",");
+    }
+
+    return h;
+  }
+
+  function parseJsonSafe(txt) {
+    try { return txt ? JSON.parse(txt) : null; } catch (_e) { return null; }
+  }
+
+  function apiUrl(path) {
+    return API_BASE + (path.startsWith("/") ? path : "/" + path);
+  }
+
+  async function apiGet(path) {
+    const res = await fetch(apiUrl(path), {
+      method: "GET",
+      headers: headers(false),
+      credentials: "same-origin",
+    });
+    const txt = await res.text().catch(() => "");
+    const data = parseJsonSafe(txt);
+    if (!res.ok) {
+      throw new Error((data && data.detail) ? data.detail : ("HTTP " + res.status));
+    }
+    return data;
+  }
+
+  async function apiPost(path, payload) {
+    const res = await fetch(apiUrl(path), {
+      method: "POST",
+      headers: headers(true),
+      credentials: "same-origin",
+      body: JSON.stringify(payload || {}),
+    });
+    const txt = await res.text().catch(() => "");
+    const data = parseJsonSafe(txt);
+    if (!res.ok) {
+      throw new Error((data && data.detail) ? data.detail : ("HTTP " + res.status));
+    }
+    return data;
+  }
+
+  async function apiDelete(path) {
+    const res = await fetch(apiUrl(path), {
+      method: "DELETE",
+      headers: headers(false),
+      credentials: "same-origin",
+    });
+    const txt = await res.text().catch(() => "");
+    const data = parseJsonSafe(txt);
+    if (!res.ok) {
+      throw new Error((data && data.detail) ? data.detail : ("HTTP " + res.status));
+    }
+    return data;
+  }
+
+  function roleLabel(v) {
+    const t = String(v || "").toLowerCase();
+    if (t === "prof") return "Prof";
+    if (t === "student") return "Eleve";
+    if (t === "admin") return "Admin";
+    return "User";
+  }
+
+  function incomingMap() {
+    const m = new Map();
+    for (const r of state.incoming || []) {
+      const id = Number(r && r.from_user && r.from_user.wp_user_id || 0);
+      if (id > 0) m.set(id, r);
+    }
+    return m;
+  }
+
+  function outgoingMap() {
+    const m = new Map();
+    for (const r of state.outgoing || []) {
+      const id = Number(r && r.to_user && r.to_user.wp_user_id || 0);
+      if (id > 0) m.set(id, r);
+    }
+    return m;
+  }
+
+  function friendSet() {
+    return new Set((state.friends || []).map((x) => Number(x.wp_user_id || 0)).filter((x) => x > 0));
+  }
+
+  function updateCounters() {
+    elCountFriends.textContent = String((state.friends || []).length);
+    elCountIncoming.textContent = String((state.incoming || []).length);
+    elCountOutgoing.textContent = String((state.outgoing || []).length);
+  }
+
+  function renderIncoming() {
+    const rows = state.incoming || [];
+    if (!rows.length) {
+      elIncoming.innerHTML = '<div class="hba-empty">Aucune demande recue.</div>';
+      return;
+    }
+
+    elIncoming.innerHTML = rows.map((r) => {
+      const u = r.from_user || {};
+      return (
+        '<article class="hba-user">' +
+          '<div class="hba-user-top">' +
+            '<h3 class="hba-user-title">' + esc(u.display_name || ("User #" + (u.wp_user_id || ""))) + '</h3>' +
+            '<span class="hba-role">' + esc(roleLabel(u.role_tag)) + '</span>' +
+          '</div>' +
+          '<p class="hba-user-meta">WP#' + esc(u.wp_user_id || "") + '</p>' +
+          '<div class="hba-user-actions">' +
+            '<button class="hba-mini-btn primary" type="button" data-accept-friend="' + esc(r.id) + '">Accepter</button>' +
+            '<button class="hba-mini-btn" type="button" data-decline-friend="' + esc(r.id) + '">Refuser</button>' +
+          '</div>' +
+        '</article>'
+      );
+    }).join("");
+  }
+
+  function renderOutgoing() {
+    const rows = state.outgoing || [];
+    if (!rows.length) {
+      elOutgoing.innerHTML = '<div class="hba-empty">Aucune demande envoyee.</div>';
+      return;
+    }
+
+    elOutgoing.innerHTML = rows.map((r) => {
+      const u = r.to_user || {};
+      return (
+        '<article class="hba-user">' +
+          '<div class="hba-user-top">' +
+            '<h3 class="hba-user-title">' + esc(u.display_name || ("User #" + (u.wp_user_id || ""))) + '</h3>' +
+            '<span class="hba-role">' + esc(roleLabel(u.role_tag)) + '</span>' +
+          '</div>' +
+          '<p class="hba-user-meta">WP#' + esc(u.wp_user_id || "") + '</p>' +
+          '<div class="hba-user-actions">' +
+            '<button class="hba-mini-btn" type="button" data-cancel-friend="' + esc(r.id) + '">Annuler</button>' +
+          '</div>' +
+        '</article>'
+      );
+    }).join("");
+  }
+
+  function renderFriends() {
+    const rows = state.friends || [];
+    if (!rows.length) {
+      elFriends.innerHTML = '<div class="hba-empty">Aucun ami.</div>';
+      return;
+    }
+
+    elFriends.innerHTML = rows.map((u) => (
+      '<article class="hba-user">' +
+        '<div class="hba-user-top">' +
+          '<h3 class="hba-user-title">' + esc(u.display_name || ("User #" + (u.wp_user_id || ""))) + '</h3>' +
+          '<span class="hba-role">' + esc(roleLabel(u.role_tag)) + '</span>' +
+        '</div>' +
+        '<p class="hba-user-meta">WP#' + esc(u.wp_user_id || "") + '</p>' +
+        '<div class="hba-user-actions">' +
+          '<button class="hba-mini-btn primary" type="button" data-open-private="' + esc(u.wp_user_id) + '">Message prive</button>' +
+          '<button class="hba-mini-btn" type="button" data-remove-friend="' + esc(u.wp_user_id) + '">Retirer</button>' +
+        '</div>' +
+      '</article>'
+    )).join("");
+  }
+
+  function renderSearch() {
+    const list = (state.searchRows || []).filter((u) => Number(u.id || 0) !== Number(state.user && state.user.wp_id || 0));
+    if (!list.length) {
+      elSearchResults.innerHTML = '<div class="hba-empty">Aucun resultat.</div>';
+      return;
+    }
+
+    const friends = friendSet();
+    const incoming = incomingMap();
+    const outgoing = outgoingMap();
+
+    elSearchResults.innerHTML = list.map((u) => {
+      const id = Number(u.id || 0);
+      const isFriend = friends.has(id);
+      const inReq = incoming.get(id);
+      const outReq = outgoing.get(id);
+      let actions = "";
+
+      if (isFriend) {
+        actions =
+          '<button class="hba-mini-btn primary" type="button" data-open-private="' + esc(id) + '">Message prive</button>' +
+          '<button class="hba-mini-btn" type="button" data-remove-friend="' + esc(id) + '">Retirer</button>';
+      } else if (inReq) {
+        actions =
+          '<button class="hba-mini-btn primary" type="button" data-accept-friend="' + esc(inReq.id) + '">Accepter</button>' +
+          '<button class="hba-mini-btn" type="button" data-decline-friend="' + esc(inReq.id) + '">Refuser</button>';
+      } else if (outReq) {
+        actions = '<button class="hba-mini-btn" type="button" data-cancel-friend="' + esc(outReq.id) + '">Annuler demande</button>';
+      } else {
+        actions = '<button class="hba-mini-btn primary" type="button" data-add-friend="' + esc(id) + '">Ajouter ami</button>';
+      }
+
+      return (
+        '<article class="hba-user">' +
+          '<div class="hba-user-top">' +
+            '<h3 class="hba-user-title">' + esc(u.title || ("User #" + id)) + '</h3>' +
+            '<span class="hba-role">' + esc(roleLabel(u.role_tag)) + '</span>' +
+          '</div>' +
+          '<p class="hba-user-meta">WP#' + esc(id) + (u.subtitle ? (" - " + esc(u.subtitle)) : "") + '</p>' +
+          '<div class="hba-user-actions">' + actions + '</div>' +
+        '</article>'
+      );
+    }).join("");
+  }
+
+  function buildRoomUrl(roomId) {
+    const base = String(SALLE_URL || "/salle/").split("?")[0];
+    return base + "?room_id=" + encodeURIComponent(String(roomId));
+  }
+
+  async function loadAll() {
+    if (state.loading) return;
+    state.loading = true;
+    setState("Chargement...");
+    try {
+      const [friends, incoming, outgoing] = await Promise.all([
+        apiGet("/friends"),
+        apiGet("/friends/requests/incoming"),
+        apiGet("/friends/requests/outgoing"),
+      ]);
+
+      state.friends = Array.isArray(friends) ? friends : [];
+      state.incoming = Array.isArray(incoming) ? incoming : [];
+      state.outgoing = Array.isArray(outgoing) ? outgoing : [];
+
+      updateCounters();
+      renderFriends();
+      renderIncoming();
+      renderOutgoing();
+      renderSearch();
+      showAlert("");
+      setState("Pret");
+    } catch (e) {
+      showAlert(String(e && e.message ? e.message : e));
+      setState("Erreur");
+    } finally {
+      state.loading = false;
+    }
+  }
+
+  async function searchUsers(raw) {
+    const q = String(raw || "").trim();
+    if (!q || q.length < 2) {
+      state.searchRows = [];
+      elSearchResults.innerHTML = '<div class="hba-empty">Tape au moins 2 caracteres.</div>';
+      return;
+    }
+
+    try {
+      const result = await apiGet("/search?q=" + encodeURIComponent(q) + "&types=users&limit=20");
+      const items = Array.isArray(result && result.items) ? result.items : [];
+      state.searchRows = items.filter((x) => String(x.type) === "user");
+      renderSearch();
+    } catch (e) {
+      showAlert(String(e && e.message ? e.message : e));
+    }
+  }
+
+  async function addFriend(toWpUserId) {
+    try {
+      await apiPost("/friends/requests", { to_wp_user_id: Number(toWpUserId || 0) });
+      await loadAll();
+    } catch (e) {
+      showAlert(String(e && e.message ? e.message : e));
+    }
+  }
+
+  async function acceptFriend(requestId) {
+    try {
+      await apiPost("/friends/requests/" + encodeURIComponent(requestId) + "/accept", {});
+      await loadAll();
+    } catch (e) {
+      showAlert(String(e && e.message ? e.message : e));
+    }
+  }
+
+  async function declineFriend(requestId) {
+    try {
+      await apiPost("/friends/requests/" + encodeURIComponent(requestId) + "/decline", {});
+      await loadAll();
+    } catch (e) {
+      showAlert(String(e && e.message ? e.message : e));
+    }
+  }
+
+  async function cancelFriend(requestId) {
+    try {
+      await apiPost("/friends/requests/" + encodeURIComponent(requestId) + "/cancel", {});
+      await loadAll();
+    } catch (e) {
+      showAlert(String(e && e.message ? e.message : e));
+    }
+  }
+
+  async function removeFriend(wpUserId) {
+    try {
+      await apiDelete("/friends/" + encodeURIComponent(wpUserId));
+      await loadAll();
+    } catch (e) {
+      showAlert(String(e && e.message ? e.message : e));
+    }
+  }
+
+  async function openPrivateRoom(peerWpUserId) {
+    try {
+      const room = await apiPost("/chats/rooms/private/ensure", {
+        peer_wp_user_id: Number(peerWpUserId || 0),
+        title: null,
+      });
+      window.location.href = buildRoomUrl(room.room_id);
+    } catch (e) {
+      showAlert(String(e && e.message ? e.message : e));
+    }
+  }
+
+  function bindEvents() {
+    elRefresh.addEventListener("click", loadAll);
+
+    elSearch.addEventListener("input", () => {
+      clearTimeout(elSearch._t);
+      elSearch._t = setTimeout(() => searchUsers(elSearch.value || ""), 180);
+    });
+
+    root.addEventListener("click", (ev) => {
+      const addBtn = ev.target.closest("[data-add-friend]");
+      if (addBtn) return addFriend(addBtn.getAttribute("data-add-friend"));
+
+      const accBtn = ev.target.closest("[data-accept-friend]");
+      if (accBtn) return acceptFriend(accBtn.getAttribute("data-accept-friend"));
+
+      const decBtn = ev.target.closest("[data-decline-friend]");
+      if (decBtn) return declineFriend(decBtn.getAttribute("data-decline-friend"));
+
+      const canBtn = ev.target.closest("[data-cancel-friend]");
+      if (canBtn) return cancelFriend(canBtn.getAttribute("data-cancel-friend"));
+
+      const remBtn = ev.target.closest("[data-remove-friend]");
+      if (remBtn) return removeFriend(remBtn.getAttribute("data-remove-friend"));
+
+      const msgBtn = ev.target.closest("[data-open-private]");
+      if (msgBtn) return openPrivateRoom(msgBtn.getAttribute("data-open-private"));
+    });
+
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden) loadAll();
+    });
+  }
+
+  async function boot() {
+    state.user = getInjectedUser();
+    if (!state.user) {
+      showAlert("HB_CONFIG/HB_USER introuvable. Verifie le snippet.");
+      setState("Non connecte");
+      return;
+    }
+
+    bindEvents();
+    await loadAll();
+  }
+
+  boot();
+})();
+</script>

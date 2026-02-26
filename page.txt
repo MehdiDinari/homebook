@@ -1,0 +1,10 @@
+Voici la liste complète des pages à créer (slugs Divi):
+
+
+recherche
+profil
+amis
+paiement-ok
+paiement-annule
+live-room
+course-room

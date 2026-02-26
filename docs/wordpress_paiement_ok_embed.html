@@ -1,0 +1,697 @@
+<div id="hb-payment-ok" class="hbpo" data-api-base="" data-wallet-url="/wallet/" data-help-url="/aide-support/" data-feed-url="/posts-actualites/">
+  <header class="hbpo-hero">
+    <div>
+      <h1>Paiement valide</h1>
+      <p class="hbpo-muted">Confirmation automatique de ton paiement et synchronisation de ton compte HomeBook.</p>
+      <div class="hbpo-chips">
+        <span class="hbpo-chip">API: <b id="hbpo-api">-</b></span>
+        <span class="hbpo-chip">Token: <b id="hbpo-token-chip">-</b></span>
+        <span class="hbpo-chip">Type: <b id="hbpo-type-chip">-</b></span>
+        <span class="hbpo-chip">Etat: <b id="hbpo-state">Initialisation</b></span>
+      </div>
+    </div>
+    <div class="hbpo-actions">
+      <a id="hbpo-go-feed" class="hbpo-btn" href="/posts-actualites/">Aller au feed</a>
+      <a id="hbpo-go-wallet" class="hbpo-btn hbpo-btn-primary" href="/wallet/">Ouvrir wallet</a>
+      <button id="hbpo-retry" class="hbpo-btn" type="button">Reverifier</button>
+    </div>
+  </header>
+
+  <div id="hbpo-alert" class="hbpo-alert" style="display:none"></div>
+
+  <section class="hbpo-grid">
+    <article class="hbpo-card">
+      <div class="hbpo-card-head">
+        <h2>Statut de confirmation</h2>
+        <p id="hbpo-status-line">En attente...</p>
+      </div>
+      <div class="hbpo-card-body">
+        <div class="hbpo-kv"><span>Token checkout</span><b id="hbpo-token">-</b></div>
+        <div class="hbpo-kv"><span>Resultat</span><b id="hbpo-result">-</b></div>
+        <div class="hbpo-kv"><span>Derniere verification</span><b id="hbpo-checked-at">-</b></div>
+        <div class="hbpo-kv"><span>Mode</span><b id="hbpo-mode">-</b></div>
+
+        <div class="hbpo-sep"></div>
+
+        <div class="hbpo-step is-done" id="hbpo-step-token">
+          <b>1. Token detecte</b>
+          <small id="hbpo-step-token-text">-</small>
+        </div>
+        <div class="hbpo-step" id="hbpo-step-confirm">
+          <b>2. Confirmation backend</b>
+          <small id="hbpo-step-confirm-text">En attente...</small>
+        </div>
+        <div class="hbpo-step" id="hbpo-step-sync">
+          <b>3. Synchronisation compte</b>
+          <small id="hbpo-step-sync-text">En attente...</small>
+        </div>
+      </div>
+    </article>
+
+    <article class="hbpo-card">
+      <div class="hbpo-card-head">
+        <h2>Resume compte</h2>
+        <p>Mise a jour apres confirmation.</p>
+      </div>
+      <div class="hbpo-card-body">
+        <div class="hbpo-kv"><span>Points disponibles</span><b id="hbpo-points">-</b></div>
+        <div class="hbpo-kv"><span>Depose (EUR)</span><b id="hbpo-deposited">-</b></div>
+        <div class="hbpo-kv"><span>Depense (EUR)</span><b id="hbpo-spent">-</b></div>
+        <div class="hbpo-kv"><span>Abonnements actifs</span><b id="hbpo-subs">-</b></div>
+        <div class="hbpo-kv"><span>Transaction / checkout</span><b id="hbpo-checkout">-</b></div>
+
+        <div class="hbpo-note">
+          En cas d'ecart d'affichage, recharge la page wallet puis reviens ici avec le meme token.
+        </div>
+      </div>
+    </article>
+
+    <article class="hbpo-card">
+      <div class="hbpo-card-head">
+        <h2>Details techniques</h2>
+        <p>Diagnostic utile si support requis.</p>
+      </div>
+      <div class="hbpo-card-body">
+        <div id="hbpo-tech" class="hbpo-tech">
+          <div class="hbpo-empty">Aucune donnee pour le moment.</div>
+        </div>
+      </div>
+    </article>
+  </section>
+</div>
+
+<style>
+  #hb-payment-ok.hbpo {
+    --bg: #f4f8ff;
+    --card: #ffffff;
+    --text: #10243d;
+    --muted: #5f7086;
+    --stroke: #d8e3f3;
+    --navy: #0f3d69;
+    --navy2: #1d5d95;
+    --ok: #0f8d63;
+    --warn: #b45309;
+    --danger: #b91c1c;
+    font-family: "DM Sans", "Segoe UI", system-ui, sans-serif;
+    color: var(--text);
+    background:
+      radial-gradient(900px 390px at -10% -30%, rgba(29, 93, 149, 0.18), transparent 60%),
+      radial-gradient(900px 320px at 108% -18%, rgba(15, 61, 105, 0.12), transparent 58%),
+      var(--bg);
+    border: 1px solid var(--stroke);
+    border-radius: 22px;
+    padding: 18px;
+    box-shadow: 0 22px 56px rgba(12, 31, 56, 0.1);
+  }
+
+  #hb-payment-ok * { box-sizing: border-box; }
+
+  #hb-payment-ok .hbpo-hero {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+  }
+
+  #hb-payment-ok h1 {
+    margin: 0;
+    font-size: clamp(24px, 4vw, 34px);
+    line-height: 1.06;
+    letter-spacing: -0.03em;
+    color: var(--navy);
+  }
+
+  #hb-payment-ok .hbpo-muted {
+    margin: 8px 0 0;
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  #hb-payment-ok .hbpo-chips {
+    margin-top: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  #hb-payment-ok .hbpo-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px solid var(--stroke);
+    border-radius: 999px;
+    background: #fff;
+    padding: 7px 10px;
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  #hb-payment-ok .hbpo-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  #hb-payment-ok .hbpo-btn {
+    border: 1px solid #c7d8ed;
+    border-radius: 12px;
+    background: #f4f9ff;
+    color: var(--navy);
+    font-size: 13px;
+    font-weight: 800;
+    cursor: pointer;
+    padding: 10px 12px;
+    text-decoration: none;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  #hb-payment-ok .hbpo-btn:hover { filter: brightness(0.98); }
+
+  #hb-payment-ok .hbpo-btn-primary {
+    color: #fff;
+    border-color: rgba(15, 61, 105, 0.45);
+    background: linear-gradient(180deg, var(--navy2), var(--navy));
+  }
+
+  #hb-payment-ok .hbpo-alert {
+    margin-bottom: 12px;
+    border: 1px solid #efb3b3;
+    border-radius: 12px;
+    background: #fff1f1;
+    color: #7f1d1d;
+    font-size: 13px;
+    padding: 10px 11px;
+  }
+
+  #hb-payment-ok .hbpo-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    align-items: start;
+  }
+
+  #hb-payment-ok .hbpo-card {
+    border: 1px solid var(--stroke);
+    border-radius: 18px;
+    background: var(--card);
+    box-shadow: 0 12px 32px rgba(13, 32, 58, 0.08);
+    overflow: hidden;
+  }
+
+  #hb-payment-ok .hbpo-card-head {
+    padding: 14px;
+    border-bottom: 1px solid var(--stroke);
+    background: linear-gradient(180deg, #fff, #f9fcff);
+  }
+
+  #hb-payment-ok .hbpo-card-head h2 {
+    margin: 0;
+    font-size: 16px;
+    color: var(--navy);
+  }
+
+  #hb-payment-ok .hbpo-card-head p {
+    margin: 6px 0 0;
+    color: var(--muted);
+    font-size: 12px;
+  }
+
+  #hb-payment-ok .hbpo-card-body { padding: 14px; }
+
+  #hb-payment-ok .hbpo-kv {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 10px;
+    border-bottom: 1px dashed #d8e2f2;
+    padding: 8px 0;
+    font-size: 13px;
+  }
+
+  #hb-payment-ok .hbpo-kv:last-child { border-bottom: 0; }
+
+  #hb-payment-ok .hbpo-kv span {
+    color: var(--muted);
+    font-weight: 700;
+  }
+
+  #hb-payment-ok .hbpo-kv b {
+    color: var(--text);
+    font-weight: 800;
+    text-align: right;
+  }
+
+  #hb-payment-ok .hbpo-sep {
+    height: 1px;
+    background: #d8e3f3;
+    margin: 12px 0;
+  }
+
+  #hb-payment-ok .hbpo-step {
+    border: 1px solid #d6e1f1;
+    border-radius: 12px;
+    background: #fbfdff;
+    padding: 8px 9px;
+    margin-top: 8px;
+    display: grid;
+    gap: 3px;
+  }
+
+  #hb-payment-ok .hbpo-step small {
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.45;
+  }
+
+  #hb-payment-ok .hbpo-step.is-done {
+    border-color: rgba(15, 141, 99, .28);
+    background: rgba(15, 141, 99, .06);
+  }
+
+  #hb-payment-ok .hbpo-step.is-error {
+    border-color: rgba(185, 28, 28, .24);
+    background: rgba(185, 28, 28, .06);
+  }
+
+  #hb-payment-ok .hbpo-note {
+    margin-top: 12px;
+    border: 1px dashed #d5e0f0;
+    border-radius: 12px;
+    padding: 10px;
+    background: #fff;
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.5;
+  }
+
+  #hb-payment-ok .hbpo-tech {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 360px;
+    overflow: auto;
+  }
+
+  #hb-payment-ok .hbpo-tech-item {
+    border: 1px solid #d8e2f3;
+    border-radius: 11px;
+    background: #f8fbff;
+    padding: 8px 9px;
+    font-size: 12px;
+    line-height: 1.45;
+  }
+
+  #hb-payment-ok .hbpo-tech-item b { color: var(--navy); }
+  #hb-payment-ok .hbpo-tech-item small { color: var(--muted); }
+
+  #hb-payment-ok .hbpo-empty {
+    border: 1px dashed #d5e0f0;
+    border-radius: 12px;
+    padding: 10px;
+    background: #fff;
+    color: var(--muted);
+    font-size: 12px;
+  }
+
+  @media (max-width: 1080px) {
+    #hb-payment-ok .hbpo-grid { grid-template-columns: 1fr; }
+  }
+</style>
+
+<script>
+(() => {
+  if (window.__HB_PAY_OK_INIT__) return;
+  window.__HB_PAY_OK_INIT__ = true;
+
+  const root = document.getElementById("hb-payment-ok");
+  if (!root) return;
+
+  const HB = window.HB_CONFIG || {};
+  const params = new URLSearchParams(window.location.search || "");
+
+  const elApi = document.getElementById("hbpo-api");
+  const elTokenChip = document.getElementById("hbpo-token-chip");
+  const elTypeChip = document.getElementById("hbpo-type-chip");
+  const elState = document.getElementById("hbpo-state");
+  const elAlert = document.getElementById("hbpo-alert");
+  const elStatusLine = document.getElementById("hbpo-status-line");
+  const elToken = document.getElementById("hbpo-token");
+  const elResult = document.getElementById("hbpo-result");
+  const elCheckedAt = document.getElementById("hbpo-checked-at");
+  const elMode = document.getElementById("hbpo-mode");
+  const elStepToken = document.getElementById("hbpo-step-token");
+  const elStepTokenText = document.getElementById("hbpo-step-token-text");
+  const elStepConfirm = document.getElementById("hbpo-step-confirm");
+  const elStepConfirmText = document.getElementById("hbpo-step-confirm-text");
+  const elStepSync = document.getElementById("hbpo-step-sync");
+  const elStepSyncText = document.getElementById("hbpo-step-sync-text");
+  const elPoints = document.getElementById("hbpo-points");
+  const elDeposited = document.getElementById("hbpo-deposited");
+  const elSpent = document.getElementById("hbpo-spent");
+  const elSubs = document.getElementById("hbpo-subs");
+  const elCheckout = document.getElementById("hbpo-checkout");
+  const elTech = document.getElementById("hbpo-tech");
+  const elRetry = document.getElementById("hbpo-retry");
+
+  const elGoWallet = document.getElementById("hbpo-go-wallet");
+  const elGoHelp = document.getElementById("hbpo-go-help");
+  const elGoFeed = document.getElementById("hbpo-go-feed");
+
+  const state = {
+    user: null,
+    tokenJwt: "",
+    checkoutToken: "",
+    mode: "unknown",
+    logs: [],
+  };
+
+  function normalizeBase(v) {
+    return String(v || "").trim().replace(/\/+$/, "");
+  }
+
+  function normalizeApiBase(raw) {
+    const b = normalizeBase(raw);
+    if (!b) return "/api/v1";
+    if (/\/api\/v1$/i.test(b)) return b;
+    if (/\/api$/i.test(b)) return b + "/v1";
+    if (/^https?:\/\//i.test(b) || b.startsWith("/")) return b + "/api/v1";
+    return "/api/v1";
+  }
+
+  const API_BASE = normalizeApiBase(HB.apiBase || root.getAttribute("data-api-base") || "");
+  if (elApi) elApi.textContent = API_BASE.replace(/^https?:\/\//, "");
+
+  if (elGoWallet) elGoWallet.href = String(root.getAttribute("data-wallet-url") || "/wallet/").trim() || "/wallet/";
+  if (elGoFeed) elGoFeed.href = String(root.getAttribute("data-feed-url") || "/posts-actualites/").trim() || "/posts-actualites/";
+  if (elGoHelp) elGoHelp.href = String(root.getAttribute("data-help-url") || "/aide-support/").trim() || "/aide-support/";
+
+  function fmtMoney(cents) {
+    const n = Number(cents || 0) / 100;
+    return n.toLocaleString("fr-FR", { style: "currency", currency: "EUR" });
+  }
+
+  function fmtDate(v) {
+    const d = new Date(v || Date.now());
+    if (String(d) === "Invalid Date") return String(v || "-");
+    return d.toLocaleString("fr-FR", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    });
+  }
+
+  function esc(value) {
+    return String(value == null ? "" : value)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/\"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
+  function addLog(title, detail) {
+    state.logs.unshift({ at: new Date().toISOString(), title: String(title || "event"), detail: detail || "" });
+    state.logs = state.logs.slice(0, 60);
+    renderLogs();
+  }
+
+  function renderLogs() {
+    if (!elTech) return;
+    if (!state.logs.length) {
+      elTech.innerHTML = '<div class="hbpo-empty">Aucune donnee pour le moment.</div>';
+      return;
+    }
+    elTech.innerHTML = state.logs.map((x) => (
+      '<article class="hbpo-tech-item">' +
+        '<div><b>' + esc(x.title) + '</b> <small>' + esc(fmtDate(x.at)) + '</small></div>' +
+        (x.detail ? ('<div>' + esc(x.detail) + '</div>') : '') +
+      '</article>'
+    )).join("");
+  }
+
+  function setState(text) {
+    if (elState) elState.textContent = text || "Pret";
+  }
+
+  function showAlert(msg) {
+    if (!elAlert) return;
+    if (!msg) {
+      elAlert.style.display = "none";
+      elAlert.textContent = "";
+      return;
+    }
+    elAlert.textContent = msg;
+    elAlert.style.display = "block";
+  }
+
+  function parseJsonSafe(txt) {
+    try { return txt ? JSON.parse(txt) : null; } catch (_e) { return null; }
+  }
+
+  function getUser() {
+    const u = HB.currentUser || window.HB_USER || null;
+    if (!u) return null;
+    return {
+      wp_id: u.wp_user_id || u.id || u.user_id || null,
+      id: u.id || u.wp_user_id || u.user_id || null,
+      user_id: u.user_id || u.id || u.wp_user_id || null,
+      email: u.email || u.user_email || "",
+      roles: Array.isArray(u.roles) ? u.roles : (u.roles ? [u.roles] : []),
+    };
+  }
+
+  function getCheckoutToken() {
+    const keys = ["checkout_token", "token", "order_id", "session_id"];
+    for (const k of keys) {
+      const v = String(params.get(k) || "").trim();
+      if (v) return v;
+    }
+    return "";
+  }
+
+  function authHeaders(withJson) {
+    const h = { Accept: "application/json" };
+    if (withJson) h["Content-Type"] = "application/json";
+
+    if (state.tokenJwt) {
+      h["Authorization"] = "Bearer " + state.tokenJwt;
+      h["X-HB-Token"] = state.tokenJwt;
+    }
+
+    if (state.user) {
+      const wpId = state.user.wp_id || state.user.id || state.user.user_id;
+      if (wpId != null) h["X-WP-User-Id"] = String(wpId);
+      if (state.user.email) h["X-User-Email"] = String(state.user.email);
+      if (state.user.roles && state.user.roles.length) {
+        h["X-WP-User-Roles"] = state.user.roles.map((x) => String(x || "").toLowerCase()).join(",");
+      }
+    }
+
+    return h;
+  }
+
+  async function api(method, path, body, attempt) {
+    const tryNo = Number(attempt || 0);
+    const res = await fetch(API_BASE + path, {
+      method,
+      headers: authHeaders(!!body),
+      body: body ? JSON.stringify(body) : undefined,
+      credentials: "same-origin",
+    });
+
+    const txt = await res.text().catch(() => "");
+    const data = parseJsonSafe(txt);
+
+    if (res.status === 429 && tryNo < 3) {
+      const waitMs = 700 * Math.pow(2, tryNo);
+      addLog("rate-limit", "HTTP 429, retry in " + waitMs + "ms");
+      await new Promise((r) => setTimeout(r, waitMs));
+      return api(method, path, body, tryNo + 1);
+    }
+
+    if (!res.ok) {
+      const err = new Error((data && data.detail) ? String(data.detail) : ("HTTP " + res.status));
+      err.status = res.status;
+      err.body = data;
+      throw err;
+    }
+
+    return data;
+  }
+
+  function markStep(el, text, mode) {
+    if (!el) return;
+    el.classList.remove("is-done", "is-error");
+    if (mode === "ok") el.classList.add("is-done");
+    if (mode === "err") el.classList.add("is-error");
+    if (el === elStepToken && elStepTokenText) elStepTokenText.textContent = text || "-";
+    if (el === elStepConfirm && elStepConfirmText) elStepConfirmText.textContent = text || "-";
+    if (el === elStepSync && elStepSyncText) elStepSyncText.textContent = text || "-";
+  }
+
+  async function syncAccountSummary() {
+    if (!state.user) return;
+    const studentId = Number(state.user.wp_id || state.user.id || state.user.user_id || 0);
+    if (!studentId) return;
+
+    try {
+      const [money, subs] = await Promise.all([
+        api("GET", "/students/" + encodeURIComponent(String(studentId)) + "/money"),
+        api("GET", "/users/" + encodeURIComponent(String(studentId)) + "/subscriptions"),
+      ]);
+
+      if (elPoints) elPoints.textContent = String(money && money.points_balance != null ? money.points_balance : "-");
+      if (elDeposited) elDeposited.textContent = fmtMoney(money && money.deposited_cents);
+      if (elSpent) elSpent.textContent = fmtMoney(money && money.spent_cents);
+      if (elSubs) {
+        const active = Array.isArray(subs) ? subs.filter((x) => String(x.status || "").toLowerCase() === "active") : [];
+        elSubs.textContent = String(active.length);
+      }
+      markStep(elStepSync, "Compte synchronise", "ok");
+      addLog("sync", "wallet + subscriptions charges");
+    } catch (err) {
+      markStep(elStepSync, "Sync partielle: " + (err && err.message ? err.message : err), "err");
+      addLog("sync-error", String(err && err.message ? err.message : err));
+    }
+  }
+
+  async function confirmToken(token) {
+    if (!token) {
+      markStep(elStepToken, "Token manquant dans l'URL", "err");
+      markStep(elStepConfirm, "Impossible de confirmer sans token", "err");
+      if (elResult) elResult.textContent = "Echec";
+      if (elMode) elMode.textContent = "none";
+      if (elTypeChip) elTypeChip.textContent = "none";
+      showAlert("Token absent. Ouvre cette page avec ?token=... ou ?checkout_token=...");
+      return;
+    }
+
+    const studentId = Number((state.user && (state.user.wp_id || state.user.id || state.user.user_id)) || 0);
+    if (!studentId) {
+      markStep(elStepConfirm, "Utilisateur non connecte", "err");
+      showAlert("Connecte-toi avant de confirmer le paiement.");
+      return;
+    }
+
+    setState("Confirmation");
+    if (elCheckedAt) elCheckedAt.textContent = fmtDate(new Date().toISOString());
+
+    markStep(elStepToken, "Token detecte", "ok");
+    markStep(elStepConfirm, "Tentative abonnement...", "");
+
+    let subscriptionErr = null;
+    let walletErr = null;
+
+    try {
+      const sub = await api("POST", "/payments/checkouts/" + encodeURIComponent(token) + "/confirm");
+      state.mode = "subscription";
+      if (elResult) elResult.textContent = "Succes";
+      if (elMode) elMode.textContent = "subscription";
+      if (elTypeChip) elTypeChip.textContent = "abonnement";
+      if (elCheckout) elCheckout.textContent = String(token);
+      if (elStatusLine) {
+        elStatusLine.textContent = "Abonnement confirme pour " + (sub.teacher_name || "prof") + ", statut " + (sub.status || "active");
+      }
+      markStep(elStepConfirm, "Paiement abonnement confirme", "ok");
+      addLog("confirm-subscription", "teacher=" + (sub.teacher_wp_id || "-") + " status=" + (sub.status || "-"));
+      await syncAccountSummary();
+      setState("Termine");
+      showAlert("");
+      return;
+    } catch (err) {
+      subscriptionErr = err;
+      addLog("confirm-subscription-error", String(err && err.message ? err.message : err));
+    }
+
+    markStep(elStepConfirm, "Tentative wallet top-up...", "");
+
+    try {
+      const topup = await api("POST", "/students/" + encodeURIComponent(String(studentId)) + "/wallet/topup/confirm", { checkout_token: token });
+      state.mode = "wallet";
+      if (elResult) elResult.textContent = "Succes";
+      if (elMode) elMode.textContent = "wallet";
+      if (elTypeChip) elTypeChip.textContent = "wallet";
+      if (elCheckout) elCheckout.textContent = String(topup.checkout_token || token);
+      if (elStatusLine) {
+        elStatusLine.textContent = "Top-up confirme, statut " + (topup.status || "paid") + ", montant " + fmtMoney(topup.amount_cents || 0);
+      }
+      markStep(elStepConfirm, "Top-up wallet confirme", "ok");
+      addLog("confirm-wallet", "amount=" + (topup.amount_cents || 0) + " status=" + (topup.status || "-"));
+      await syncAccountSummary();
+      setState("Termine");
+      showAlert("");
+      return;
+    } catch (err) {
+      walletErr = err;
+      addLog("confirm-wallet-error", String(err && err.message ? err.message : err));
+    }
+
+    const msg1 = subscriptionErr && subscriptionErr.message ? subscriptionErr.message : "abonnement: erreur";
+    const msg2 = walletErr && walletErr.message ? walletErr.message : "wallet: erreur";
+    const combined = msg1 + " | " + msg2;
+
+    if (/not completed yet/i.test(combined) || /not completed/i.test(combined)) {
+      if (elResult) elResult.textContent = "En attente";
+      if (elMode) elMode.textContent = "pending";
+      if (elTypeChip) elTypeChip.textContent = "pending";
+      if (elStatusLine) elStatusLine.textContent = "Paiement detecte mais encore en attente de capture fournisseur.";
+      markStep(elStepConfirm, "Capture fournisseur en attente", "err");
+      setState("Pending");
+      showAlert("Le paiement n'est pas encore capture par le provider. Clique sur 'Reverifier' dans 10-20 secondes.");
+      return;
+    }
+
+    if (elResult) elResult.textContent = "Echec";
+    if (elMode) elMode.textContent = "failed";
+    if (elTypeChip) elTypeChip.textContent = "failed";
+    if (elStatusLine) elStatusLine.textContent = "Aucune confirmation backend reussie pour ce token.";
+    markStep(elStepConfirm, combined, "err");
+    setState("Erreur");
+    showAlert("Confirmation impossible pour ce token. Verifie que c'est le bon compte puis reessaie.");
+  }
+
+  async function boot() {
+    state.user = getUser();
+    state.tokenJwt = String(HB.token || "").trim();
+    state.checkoutToken = getCheckoutToken();
+
+    if (elToken) elToken.textContent = state.checkoutToken || "-";
+    if (elTokenChip) elTokenChip.textContent = state.checkoutToken ? (state.checkoutToken.slice(0, 8) + "...") : "missing";
+    if (elTypeChip) elTypeChip.textContent = "detect";
+    if (elCheckedAt) elCheckedAt.textContent = fmtDate(new Date().toISOString());
+
+    if (elStepTokenText) elStepTokenText.textContent = state.checkoutToken ? "OK" : "Token manquant";
+    if (!state.checkoutToken) {
+      if (elStepToken) elStepToken.classList.add("is-error");
+      if (elStatusLine) elStatusLine.textContent = "Token absent.";
+    }
+
+    try {
+      setState("Verification");
+      await confirmToken(state.checkoutToken);
+    } catch (err) {
+      showAlert(String(err && err.message ? err.message : err));
+      setState("Erreur");
+    }
+  }
+
+  if (elRetry) {
+    elRetry.addEventListener("click", async () => {
+      showAlert("");
+      await confirmToken(state.checkoutToken);
+    });
+  }
+
+  boot();
+})();
+</script>

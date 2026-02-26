@@ -1,0 +1,720 @@
+<div id="hb-notifications-page" class="hbn" data-api-base="" data-salle-url="/salle/" data-posts-url="/posts-actualites/" data-poll-ms="20000">
+  <header class="hbn-hero">
+    <div>
+      <h1>Notifications</h1>
+      <p class="hbn-muted">Centralise les alertes et ouvre rapidement la bonne page.</p>
+      <div class="hbn-chips">
+        <span class="hbn-chip">API: <b id="hbn-api">-</b></span>
+        <span class="hbn-chip">Total: <b id="hbn-total">0</b></span>
+        <span class="hbn-chip">Non lues: <b id="hbn-unread">0</b></span>
+        <span class="hbn-chip">Etat: <b id="hbn-state">Pret</b></span>
+      </div>
+    </div>
+    <div class="hbn-actions">
+      <button id="hbn-refresh" class="hbn-btn" type="button">Actualiser</button>
+      <button id="hbn-mark-all" class="hbn-btn hbn-btn-primary" type="button">Tout lire</button>
+    </div>
+  </header>
+
+  <section class="hbn-card">
+    <div class="hbn-card-head">
+      <h2>Flux des notifications</h2>
+      <p>Filtre par etat, type ou mot-cle.</p>
+    </div>
+    <div class="hbn-card-body">
+      <div class="hbn-toolbar">
+        <input id="hbn-search" type="search" placeholder="Rechercher dans titre, contenu, payload..." />
+        <select id="hbn-filter-read">
+          <option value="all">Toutes</option>
+          <option value="unread">Non lues</option>
+          <option value="read">Lues</option>
+        </select>
+        <select id="hbn-filter-kind">
+          <option value="all">Tous types</option>
+        </select>
+      </div>
+      <div id="hbn-alert" class="hbn-alert" style="display:none"></div>
+      <div id="hbn-list" class="hbn-list">
+        <div class="hbn-empty">Chargement...</div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<style>
+  #hb-notifications-page.hbn {
+    --bg: #f4f8ff;
+    --card: #ffffff;
+    --text: #0f243d;
+    --muted: #5d7087;
+    --stroke: #d8e5f7;
+    --primary: #0f3d69;
+    --primary-2: #1a568f;
+    --warn: #b45309;
+    --ok: #0d8d61;
+    --danger: #b91c1c;
+    font-family: "Inter", "Segoe UI", Arial, sans-serif;
+    color: var(--text);
+    background:
+      radial-gradient(920px 400px at -10% -30%, rgba(26, 86, 143, 0.18), transparent 60%),
+      radial-gradient(920px 360px at 110% -20%, rgba(15, 61, 105, 0.14), transparent 58%),
+      var(--bg);
+    border: 1px solid var(--stroke);
+    border-radius: 22px;
+    padding: 18px;
+    box-shadow: 0 20px 54px rgba(15, 33, 58, 0.09);
+  }
+
+  #hb-notifications-page * { box-sizing: border-box; }
+
+  #hb-notifications-page .hbn-hero {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+  }
+
+  #hb-notifications-page h1 {
+    margin: 0;
+    font-size: clamp(24px, 4vw, 34px);
+    letter-spacing: -0.03em;
+    color: var(--primary);
+    line-height: 1.05;
+  }
+
+  #hb-notifications-page .hbn-muted {
+    margin: 8px 0 0;
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  #hb-notifications-page .hbn-chips {
+    margin-top: 10px;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  #hb-notifications-page .hbn-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px solid var(--stroke);
+    border-radius: 999px;
+    background: #fff;
+    padding: 7px 10px;
+    font-size: 12px;
+    color: var(--muted);
+    font-weight: 700;
+  }
+
+  #hb-notifications-page .hbn-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  #hb-notifications-page .hbn-btn {
+    border: 1px solid #c8daef;
+    border-radius: 12px;
+    background: #f3f8ff;
+    color: var(--primary);
+    font-size: 13px;
+    font-weight: 800;
+    cursor: pointer;
+    padding: 10px 12px;
+    line-height: 1;
+  }
+
+  #hb-notifications-page .hbn-btn-primary {
+    color: #fff;
+    border-color: rgba(15, 61, 105, 0.45);
+    background: linear-gradient(180deg, var(--primary-2), var(--primary));
+  }
+
+  #hb-notifications-page .hbn-card {
+    border: 1px solid var(--stroke);
+    border-radius: 18px;
+    background: var(--card);
+    box-shadow: 0 12px 34px rgba(15, 33, 58, 0.08);
+    overflow: hidden;
+  }
+
+  #hb-notifications-page .hbn-card-head {
+    padding: 14px;
+    border-bottom: 1px solid var(--stroke);
+    background: linear-gradient(180deg, #fff, #f9fcff);
+  }
+
+  #hb-notifications-page .hbn-card-head h2 {
+    margin: 0;
+    font-size: 16px;
+    color: var(--primary);
+  }
+
+  #hb-notifications-page .hbn-card-head p {
+    margin: 6px 0 0;
+    color: var(--muted);
+    font-size: 12px;
+  }
+
+  #hb-notifications-page .hbn-card-body { padding: 14px; }
+
+  #hb-notifications-page .hbn-toolbar {
+    display: grid;
+    grid-template-columns: 1fr 170px 180px;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+
+  #hb-notifications-page .hbn-toolbar input,
+  #hb-notifications-page .hbn-toolbar select {
+    width: 100%;
+    border: 1px solid #c6d9ef;
+    border-radius: 10px;
+    background: #fff;
+    padding: 10px 11px;
+    font-size: 14px;
+    color: var(--text);
+    outline: none;
+  }
+
+  #hb-notifications-page .hbn-toolbar input:focus,
+  #hb-notifications-page .hbn-toolbar select:focus {
+    border-color: #2a6ba8;
+    box-shadow: 0 0 0 4px rgba(26, 86, 143, 0.16);
+  }
+
+  #hb-notifications-page .hbn-alert {
+    margin-bottom: 10px;
+    border-radius: 10px;
+    border: 1px solid #efb6b6;
+    background: #fff2f2;
+    color: #7f1d1d;
+    font-size: 12px;
+    padding: 9px 10px;
+  }
+
+  #hb-notifications-page .hbn-list {
+    display: grid;
+    gap: 8px;
+  }
+
+  #hb-notifications-page .hbn-item {
+    border: 1px solid #d4e2f5;
+    border-radius: 12px;
+    background: #fbfdff;
+    padding: 10px;
+    display: grid;
+    gap: 8px;
+  }
+
+  #hb-notifications-page .hbn-item.unread {
+    border-left: 4px solid var(--warn);
+    background: #fffdf7;
+  }
+
+  #hb-notifications-page .hbn-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+  }
+
+  #hb-notifications-page .hbn-title {
+    margin: 0;
+    font-size: 14px;
+    color: var(--text);
+    font-weight: 800;
+  }
+
+  #hb-notifications-page .hbn-kind {
+    display: inline-flex;
+    border-radius: 999px;
+    border: 1px solid #d4e2f5;
+    background: #fff;
+    color: #4f657f;
+    font-size: 11px;
+    padding: 5px 8px;
+    font-weight: 800;
+  }
+
+  #hb-notifications-page .hbn-body {
+    margin: 0;
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.45;
+    white-space: pre-wrap;
+  }
+
+  #hb-notifications-page .hbn-meta {
+    margin: 0;
+    font-size: 12px;
+    color: #6f839b;
+  }
+
+  #hb-notifications-page .hbn-actions-row {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  #hb-notifications-page .hbn-mini-btn {
+    border: 1px solid #c7d9f0;
+    border-radius: 9px;
+    background: #fff;
+    color: var(--primary);
+    font-size: 12px;
+    font-weight: 800;
+    padding: 7px 9px;
+    cursor: pointer;
+    text-decoration: none;
+  }
+
+  #hb-notifications-page .hbn-mini-btn.primary {
+    color: #fff;
+    border-color: rgba(15, 61, 105, 0.5);
+    background: linear-gradient(180deg, #1a568f, #0f3d69);
+  }
+
+  #hb-notifications-page .hbn-empty {
+    border: 1px dashed #cfe0f5;
+    border-radius: 12px;
+    background: #fff;
+    color: var(--muted);
+    font-size: 13px;
+    padding: 12px;
+  }
+
+  @media (max-width: 860px) {
+    #hb-notifications-page .hbn-toolbar {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
+<script>
+(() => {
+  if (window.__HB_NOTIFICATIONS_PAGE_INIT__) return;
+  window.__HB_NOTIFICATIONS_PAGE_INIT__ = true;
+
+  const root = document.getElementById("hb-notifications-page");
+  if (!root) return;
+
+  const HB = window.HB_CONFIG || {};
+  const DEBUG = new URLSearchParams(window.location.search).get("debug") === "1";
+
+  const elApi = root.querySelector("#hbn-api");
+  const elState = root.querySelector("#hbn-state");
+  const elTotal = root.querySelector("#hbn-total");
+  const elUnread = root.querySelector("#hbn-unread");
+  const elRefresh = root.querySelector("#hbn-refresh");
+  const elMarkAll = root.querySelector("#hbn-mark-all");
+  const elSearch = root.querySelector("#hbn-search");
+  const elFilterRead = root.querySelector("#hbn-filter-read");
+  const elFilterKind = root.querySelector("#hbn-filter-kind");
+  const elAlert = root.querySelector("#hbn-alert");
+  const elList = root.querySelector("#hbn-list");
+
+  const SALLE_URL = String(root.getAttribute("data-salle-url") || "/salle/").trim();
+  const POSTS_URL = String(root.getAttribute("data-posts-url") || "/posts-actualites/").trim();
+  const POLL_MS = Math.max(10000, Number(root.getAttribute("data-poll-ms") || 20000) || 20000);
+
+  const state = {
+    user: null,
+    rows: [],
+    query: "",
+    readFilter: "all",
+    kindFilter: "all",
+    loading: false,
+    timer: null,
+    backoffMs: 0,
+  };
+
+  function debug(label, payload) {
+    if (!DEBUG) return;
+    console.log("[notifications]", label, payload);
+  }
+
+  function normalizeBase(v) {
+    return String(v || "").trim().replace(/\/+$/, "");
+  }
+
+  function normalizeApiBase(raw) {
+    const b = normalizeBase(raw);
+    if (!b) return "/api/v1";
+    if (/\/api\/v1$/i.test(b)) return b;
+    if (/\/api$/i.test(b)) return b + "/v1";
+    if (/^https?:\/\//i.test(b) || b.startsWith("/")) return b + "/api/v1";
+    return "/api/v1";
+  }
+
+  const API_BASE = normalizeApiBase(HB.apiBase || root.getAttribute("data-api-base") || "");
+  if (elApi) elApi.textContent = API_BASE.replace(/^https?:\/\//, "");
+
+  function esc(v) {
+    return String(v == null ? "" : v)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
+  function toFrDate(iso) {
+    if (!iso) return "-";
+    const d = new Date(iso);
+    if (String(d) === "Invalid Date") return String(iso);
+    return d.toLocaleString("fr-FR", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    });
+  }
+
+  function setState(text) {
+    if (elState) elState.textContent = text || "Pret";
+  }
+
+  function showAlert(msg) {
+    if (!elAlert) return;
+    if (!msg) {
+      elAlert.style.display = "none";
+      elAlert.textContent = "";
+      return;
+    }
+    elAlert.textContent = msg;
+    elAlert.style.display = "block";
+  }
+
+  function token() {
+    return String(HB.token || "").trim();
+  }
+
+  function getInjectedUser() {
+    const u = HB.currentUser || window.HB_USER || null;
+    if (!u) return null;
+    return {
+      wp_id: u.wp_user_id || u.id || u.user_id || null,
+      id: u.id || u.wp_user_id || u.user_id || null,
+      user_id: u.user_id || u.id || u.wp_user_id || null,
+      email: u.email || u.user_email || "",
+      name: u.displayName || u.display_name || u.name || "",
+      roles: Array.isArray(u.roles) ? u.roles : [],
+    };
+  }
+
+  function rolesList() {
+    const raw = (state.user && (state.user.roles || state.user.role)) || [];
+    return (Array.isArray(raw) ? raw : [raw]).map((x) => String(x || "").toLowerCase()).filter(Boolean);
+  }
+
+  function headers(withJson) {
+    const h = { Accept: "application/json" };
+    if (withJson) h["Content-Type"] = "application/json";
+    const t = token();
+    if (t) h["Authorization"] = "Bearer " + t;
+    if (state.user) {
+      const wpId = state.user.wp_id || state.user.id || state.user.user_id;
+      if (wpId != null) h["X-WP-User-Id"] = String(wpId);
+      if (state.user.email) h["X-User-Email"] = String(state.user.email);
+      const roles = rolesList();
+      if (roles.length) h["X-WP-User-Roles"] = roles.join(",");
+    }
+    return h;
+  }
+
+  function parseJsonSafe(txt) {
+    try { return txt ? JSON.parse(txt) : null; } catch (_e) { return null; }
+  }
+
+  function apiUrl(path) {
+    return API_BASE + (path.startsWith("/") ? path : "/" + path);
+  }
+
+  async function apiGet(path) {
+    const res = await fetch(apiUrl(path), {
+      method: "GET",
+      headers: headers(false),
+      credentials: "same-origin",
+    });
+    const txt = await res.text().catch(() => "");
+    const data = parseJsonSafe(txt);
+    debug("GET " + path, { status: res.status, body: data || txt });
+    if (!res.ok) {
+      const err = new Error((data && data.detail) ? data.detail : ("HTTP " + res.status));
+      err.status = res.status;
+      const ra = Number(res.headers.get("retry-after") || 0);
+      if (Number.isFinite(ra) && ra > 0) err.retryAfterSec = ra;
+      throw err;
+    }
+    return data;
+  }
+
+  async function apiPost(path, payload) {
+    const res = await fetch(apiUrl(path), {
+      method: "POST",
+      headers: headers(true),
+      credentials: "same-origin",
+      body: JSON.stringify(payload || {}),
+    });
+    const txt = await res.text().catch(() => "");
+    const data = parseJsonSafe(txt);
+    debug("POST " + path, { status: res.status, body: data || txt, payload: payload || {} });
+    if (!res.ok) {
+      const err = new Error((data && data.detail) ? data.detail : ("HTTP " + res.status));
+      err.status = res.status;
+      throw err;
+    }
+    return data;
+  }
+
+  function filteredRows() {
+    const q = String(state.query || "").toLowerCase().trim();
+    return state.rows.filter((n) => {
+      if (state.readFilter === "unread" && n.is_read) return false;
+      if (state.readFilter === "read" && !n.is_read) return false;
+      if (state.kindFilter !== "all" && String(n.kind || "") !== state.kindFilter) return false;
+      if (!q) return true;
+      const hay = [
+        String(n.title || ""),
+        String(n.body || ""),
+        String(n.kind || ""),
+        JSON.stringify(n.payload || {}),
+      ].join(" ").toLowerCase();
+      return hay.includes(q);
+    });
+  }
+
+  function updateKindsFilter() {
+    const prev = state.kindFilter;
+    const kinds = Array.from(new Set(state.rows.map((x) => String(x.kind || "").trim()).filter(Boolean))).sort();
+    elFilterKind.innerHTML = '<option value="all">Tous types</option>' + kinds.map((k) => (
+      '<option value="' + esc(k) + '">' + esc(k) + '</option>'
+    )).join("");
+    if (kinds.includes(prev)) {
+      elFilterKind.value = prev;
+    } else {
+      state.kindFilter = "all";
+      elFilterKind.value = "all";
+    }
+  }
+
+  function targetUrlFromNotif(n) {
+    const payload = (n && n.payload && typeof n.payload === "object") ? n.payload : {};
+    if (payload.url) return String(payload.url);
+    if (payload.room_id != null) return String(SALLE_URL).split("?")[0] + "?room_id=" + encodeURIComponent(String(payload.room_id));
+    if (payload.post_id != null) return String(POSTS_URL).split("?")[0] + "?post_id=" + encodeURIComponent(String(payload.post_id));
+    return "";
+  }
+
+  function hasInviteActions(n) {
+    const payload = (n && n.payload && typeof n.payload === "object") ? n.payload : {};
+    return Boolean(payload.invite_id) && String(n.kind || "").indexOf("chat_group_invite") === 0;
+  }
+
+  function renderRows() {
+    const list = filteredRows();
+    const unread = state.rows.filter((x) => !x.is_read).length;
+    if (elTotal) elTotal.textContent = String(state.rows.length);
+    if (elUnread) elUnread.textContent = String(unread);
+
+    if (!list.length) {
+      elList.innerHTML = '<div class="hbn-empty">Aucune notification a afficher.</div>';
+      return;
+    }
+
+    elList.innerHTML = list.map((n) => {
+      const target = targetUrlFromNotif(n);
+      const payload = (n && n.payload && typeof n.payload === "object") ? n.payload : {};
+      const inviteId = payload.invite_id != null ? String(payload.invite_id) : "";
+      const inviteActions = hasInviteActions(n)
+        ? (
+          '<button class="hbn-mini-btn primary" type="button" data-accept-invite="' + esc(inviteId) + '" data-notif-id="' + esc(n.id) + '">Accepter invite</button>' +
+          '<button class="hbn-mini-btn" type="button" data-decline-invite="' + esc(inviteId) + '" data-notif-id="' + esc(n.id) + '">Refuser invite</button>'
+        )
+        : "";
+
+      return (
+        '<article class="hbn-item ' + (n.is_read ? 'read' : 'unread') + '" data-id="' + esc(n.id) + '">' +
+          '<div class="hbn-top">' +
+            '<h3 class="hbn-title">' + esc(n.title || "Notification") + '</h3>' +
+            '<span class="hbn-kind">' + esc(n.kind || "-") + '</span>' +
+          '</div>' +
+          '<p class="hbn-body">' + esc(n.body || "") + '</p>' +
+          '<p class="hbn-meta">' + esc(toFrDate(n.created_at)) + ' - ' + (n.is_read ? 'Lue' : 'Non lue') + '</p>' +
+          '<div class="hbn-actions-row">' +
+            inviteActions +
+            (target ? ('<a class="hbn-mini-btn primary" href="' + esc(target) + '">Ouvrir</a>') : '') +
+            (!n.is_read ? ('<button class="hbn-mini-btn" type="button" data-read="' + esc(n.id) + '">Marquer lu</button>') : '') +
+          '</div>' +
+        '</article>'
+      );
+    }).join("");
+  }
+
+  async function loadNotifications() {
+    if (state.loading) return;
+    if (!state.user) {
+      showAlert("Connecte-toi pour voir tes notifications.");
+      return;
+    }
+    state.loading = true;
+    setState("Chargement...");
+    try {
+      const rows = await apiGet("/notifications?limit=120");
+      state.rows = Array.isArray(rows) ? rows : [];
+      updateKindsFilter();
+      renderRows();
+      showAlert("");
+      setState("Pret");
+      const hadBackoff = state.backoffMs > 0;
+      state.backoffMs = 0;
+      if (hadBackoff && state.timer) startPolling();
+    } catch (e) {
+      const msg = String(e && e.message ? e.message : e);
+      showAlert(msg);
+      setState("Erreur");
+      if (e && e.status === 429) {
+        if (e.retryAfterSec) state.backoffMs = Math.max(30000, e.retryAfterSec * 1000);
+        else state.backoffMs = Math.max(30000, state.backoffMs ? Math.min(state.backoffMs * 2, 10 * 60 * 1000) : 60000);
+        if (state.timer) startPolling();
+      }
+      if (!state.rows.length) {
+        elList.innerHTML = '<div class="hbn-empty">Impossible de charger les notifications.</div>';
+      }
+    } finally {
+      state.loading = false;
+    }
+  }
+
+  async function markOneRead(notificationId) {
+    try {
+      await apiPost("/notifications/" + encodeURIComponent(notificationId) + "/read", {});
+      const idx = state.rows.findIndex((x) => String(x.id) === String(notificationId));
+      if (idx >= 0) state.rows[idx].is_read = true;
+      renderRows();
+    } catch (e) {
+      showAlert(String(e && e.message ? e.message : e));
+    }
+  }
+
+  async function markAllRead() {
+    elMarkAll.disabled = true;
+    try {
+      await apiPost("/notifications/read-all", {});
+      state.rows = state.rows.map((x) => ({ ...x, is_read: true }));
+      renderRows();
+    } catch (e) {
+      showAlert(String(e && e.message ? e.message : e));
+    } finally {
+      elMarkAll.disabled = false;
+    }
+  }
+
+  async function acceptInvite(inviteId, notifId) {
+    try {
+      const room = await apiPost("/chats/invites/" + encodeURIComponent(inviteId) + "/accept", {});
+      if (notifId) await markOneRead(notifId);
+      window.location.href = String(SALLE_URL).split("?")[0] + "?room_id=" + encodeURIComponent(String(room.room_id));
+    } catch (e) {
+      showAlert(String(e && e.message ? e.message : e));
+    }
+  }
+
+  async function declineInvite(inviteId, notifId) {
+    try {
+      await apiPost("/chats/invites/" + encodeURIComponent(inviteId) + "/decline", {});
+      if (notifId) await markOneRead(notifId);
+      await loadNotifications();
+    } catch (e) {
+      showAlert(String(e && e.message ? e.message : e));
+    }
+  }
+
+  function startPolling() {
+    stopPolling();
+    state.timer = setInterval(() => {
+      if (document.hidden) return;
+      loadNotifications();
+    }, state.backoffMs || POLL_MS);
+  }
+
+  function stopPolling() {
+    if (state.timer) {
+      clearInterval(state.timer);
+      state.timer = null;
+    }
+  }
+
+  function bindEvents() {
+    elRefresh.addEventListener("click", loadNotifications);
+    elMarkAll.addEventListener("click", markAllRead);
+
+    elSearch.addEventListener("input", () => {
+      state.query = elSearch.value || "";
+      renderRows();
+    });
+
+    elFilterRead.addEventListener("change", () => {
+      state.readFilter = elFilterRead.value || "all";
+      renderRows();
+    });
+
+    elFilterKind.addEventListener("change", () => {
+      state.kindFilter = elFilterKind.value || "all";
+      renderRows();
+    });
+
+    root.addEventListener("click", (ev) => {
+      const readBtn = ev.target.closest("[data-read]");
+      if (readBtn) return markOneRead(readBtn.getAttribute("data-read"));
+
+      const acceptBtn = ev.target.closest("[data-accept-invite]");
+      if (acceptBtn) {
+        return acceptInvite(
+          acceptBtn.getAttribute("data-accept-invite"),
+          acceptBtn.getAttribute("data-notif-id"),
+        );
+      }
+
+      const declineBtn = ev.target.closest("[data-decline-invite]");
+      if (declineBtn) {
+        return declineInvite(
+          declineBtn.getAttribute("data-decline-invite"),
+          declineBtn.getAttribute("data-notif-id"),
+        );
+      }
+    });
+
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden) loadNotifications();
+    });
+
+    window.addEventListener("beforeunload", stopPolling);
+  }
+
+  async function boot() {
+    state.user = getInjectedUser();
+    if (!state.user) {
+      showAlert("HB_CONFIG/HB_USER introuvable. Verifie le snippet.");
+      elList.innerHTML = '<div class="hbn-empty">Utilisateur non detecte.</div>';
+      setState("Non connecte");
+      return;
+    }
+
+    bindEvents();
+    await loadNotifications();
+    startPolling();
+  }
+
+  boot();
+})();
+</script>

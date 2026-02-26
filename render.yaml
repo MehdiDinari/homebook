@@ -1,0 +1,214 @@
+services:
+  - type: web
+    name: homebook-api
+    runtime: python
+    plan: free
+    region: frankfurt
+    buildCommand: pip install -r requirements.txt
+    preDeployCommand: alembic upgrade head
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    autoDeployTrigger: commit
+    envVars:
+      - key: APP_ENV
+        value: prod
+      - key: APP_HOST
+        value: 0.0.0.0
+      - key: APP_PORT
+        value: 8000
+      - key: API_PREFIX
+        value: /api/v1
+      - key: WS_PREFIX
+        value: /ws
+      - key: DATABASE_URL
+        fromDatabase:
+          name: homebook-postgres
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: homebook-redis
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_ALGORITHM
+        value: HS256
+      - key: JWT_EXP_LEEWAY_SECONDS
+        value: "30"
+      - key: WP_BASE_URL
+        sync: false
+      - key: WP_APP_USER
+        sync: false
+      - key: WP_APP_PASSWORD
+        sync: false
+      - key: WP_ROLE_TEACHER
+        value: prof
+      - key: WP_ROLE_STUDENT
+        value: student
+      - key: WP_TABLE_PREFIX
+        value: wp_
+      - key: ALLOWED_CORS_ORIGINS
+        sync: false
+      - key: OLLAMA_BASE_URL
+        value: http://homebook-ollama:11434
+      - key: OLLAMA_MODEL
+        value: llama3.2:1b
+      - key: OLLAMA_TIMEOUT_SECONDS
+        value: "60"
+      - key: S3_ENDPOINT_URL
+        value: http://homebook-minio:9000
+      - key: S3_ACCESS_KEY
+        fromService:
+          type: pserv
+          name: homebook-minio
+          envVarKey: MINIO_ROOT_USER
+      - key: S3_SECRET_KEY
+        fromService:
+          type: pserv
+          name: homebook-minio
+          envVarKey: MINIO_ROOT_PASSWORD
+      - key: S3_BUCKET
+        value: homebook-assets
+      - key: S3_REGION
+        value: us-east-1
+      - key: S3_PRESIGNED_EXPIRES_SECONDS
+        value: "900"
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_PUBLISHABLE_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+      - key: STRIPE_SUCCESS_URL
+        sync: false
+      - key: STRIPE_CANCEL_URL
+        sync: false
+      - key: PAYPAL_CLIENT_ID
+        sync: false
+      - key: PAYPAL_CLIENT_SECRET
+        sync: false
+      - key: PAYPAL_ENV
+        value: sandbox
+      - key: PAYPAL_SUCCESS_URL
+        sync: false
+      - key: PAYPAL_CANCEL_URL
+        sync: false
+      - key: TEACHER_REVENUE_SHARE
+        value: "0.7"
+      - key: LIVE_SESSION_CLEANUP_MINUTES
+        value: "0"
+      - key: RATE_LIMIT_PER_MINUTE
+        value: "120"
+      - key: MAX_UPLOAD_SIZE_MB
+        value: "8"
+
+  - type: worker
+    name: homebook-worker
+    runtime: python
+    plan: starter
+    region: frankfurt
+    buildCommand: pip install -r requirements.txt
+    startCommand: arq app.workers.arq_worker.WorkerSettings
+    autoDeployTrigger: commit
+    envVars:
+      - key: APP_ENV
+        value: prod
+      - key: DATABASE_URL
+        fromDatabase:
+          name: homebook-postgres
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: homebook-redis
+          property: connectionString
+      - key: JWT_SECRET
+        fromService:
+          type: web
+          name: homebook-api
+          envVarKey: JWT_SECRET
+      - key: WP_BASE_URL
+        fromService:
+          type: web
+          name: homebook-api
+          envVarKey: WP_BASE_URL
+      - key: WP_APP_USER
+        fromService:
+          type: web
+          name: homebook-api
+          envVarKey: WP_APP_USER
+      - key: WP_APP_PASSWORD
+        fromService:
+          type: web
+          name: homebook-api
+          envVarKey: WP_APP_PASSWORD
+      - key: OLLAMA_BASE_URL
+        value: http://homebook-ollama:11434
+      - key: OLLAMA_MODEL
+        value: llama3.2:1b
+      - key: OLLAMA_TIMEOUT_SECONDS
+        value: "60"
+      - key: S3_ENDPOINT_URL
+        value: http://homebook-minio:9000
+      - key: S3_ACCESS_KEY
+        fromService:
+          type: pserv
+          name: homebook-minio
+          envVarKey: MINIO_ROOT_USER
+      - key: S3_SECRET_KEY
+        fromService:
+          type: pserv
+          name: homebook-minio
+          envVarKey: MINIO_ROOT_PASSWORD
+      - key: S3_BUCKET
+        value: homebook-assets
+      - key: S3_REGION
+        value: us-east-1
+
+  - type: keyvalue
+    name: homebook-redis
+    plan: free
+    region: frankfurt
+    ipAllowList: []
+    maxmemoryPolicy: allkeys-lru
+
+  - type: pserv
+    name: homebook-minio
+    runtime: image
+    image: minio/minio:latest
+    plan: starter
+    region: frankfurt
+    dockerCommand: minio server /data --address :9000 --console-address :9001
+    envVars:
+      - key: MINIO_ROOT_USER
+        generateValue: true
+      - key: MINIO_ROOT_PASSWORD
+        generateValue: true
+    disk:
+      name: minio-data
+      mountPath: /data
+      sizeGB: 10
+
+  - type: pserv
+    name: homebook-ollama
+    runtime: image
+    image: ollama/ollama:latest
+    plan: standard
+    region: frankfurt
+    dockerCommand: sh -lc "ollama serve & sleep 8 && ollama pull ${OLLAMA_MODEL:-llama3.2:1b} && wait"
+    envVars:
+      - key: OLLAMA_MODEL
+        value: llama3.2:1b
+    disk:
+      name: ollama-data
+      mountPath: /root/.ollama
+      sizeGB: 30
+
+databases:
+  - name: homebook-postgres
+    databaseName: homebook
+    user: homebook
+    plan: free
+    region: frankfurt
+    ipAllowList: []
+    postgresMajorVersion: "16"

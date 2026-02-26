@@ -1,0 +1,880 @@
+<div id="hb-create-post-page" class="hbcpost" data-api-base="" data-wp-base="" data-feed-url="/posts-actualites/">
+  <header class="hbcpost-hero">
+    <div>
+      <h1>Creer un post</h1>
+      <p class="hbcpost-muted">Publie une actualite avec texte, image et hashtags. Le post apparaitra dans le feed.</p>
+      <div class="hbcpost-chips">
+        <span class="hbcpost-chip">API: <b id="hbcpost-api">-</b></span>
+        <span class="hbcpost-chip">Etat: <b id="hbcpost-state">Pret</b></span>
+      </div>
+    </div>
+
+    <div class="hbcpost-head-actions">
+      <a id="hbcpost-back" class="hbcpost-btn hbcpost-btn-ghost" href="/posts-actualites/">Retour au feed</a>
+      <button id="hbcpost-publish-top" class="hbcpost-btn hbcpost-btn-primary" type="button">Publier</button>
+    </div>
+  </header>
+
+  <div class="hbcpost-grid">
+    <section class="hbcpost-card">
+      <h2>Contenu</h2>
+
+      <label class="hbcpost-label" for="hbcpost-content">Texte du post</label>
+      <textarea id="hbcpost-content" class="hbcpost-textarea" rows="8" maxlength="2500" placeholder="Ecris ton actualite ici..."></textarea>
+      <div class="hbcpost-row hbcpost-row-space">
+        <small id="hbcpost-count" class="hbcpost-muted">0 / 2500</small>
+        <small class="hbcpost-muted">Mentions: @pseudo | Hashtags: #cours #anglais</small>
+      </div>
+
+      <hr class="hbcpost-sep" />
+
+      <h3>Media (optionnel)</h3>
+
+      <label class="hbcpost-label" for="hbcpost-file">Uploader une image</label>
+      <input id="hbcpost-file" class="hbcpost-input" type="file" accept="image/*" />
+      <small class="hbcpost-muted">Formats images. Taille conseillee: max 10 Mo.</small>
+
+      <div class="hbcpost-or">ou</div>
+
+      <label class="hbcpost-label" for="hbcpost-url">URL d'image publique</label>
+      <input id="hbcpost-url" class="hbcpost-input" type="url" placeholder="https://..." />
+
+      <div id="hbcpost-upload-note" class="hbcpost-note" style="display:none"></div>
+
+      <div class="hbcpost-actions">
+        <button id="hbcpost-publish" class="hbcpost-btn hbcpost-btn-primary" type="button">Publier</button>
+        <button id="hbcpost-reset" class="hbcpost-btn hbcpost-btn-ghost" type="button">Reinitialiser</button>
+      </div>
+
+      <div id="hbcpost-alert" class="hbcpost-alert" style="display:none"></div>
+      <div id="hbcpost-success" class="hbcpost-success" style="display:none"></div>
+    </section>
+
+    <aside class="hbcpost-card">
+      <h2>Apercu</h2>
+      <div id="hbcpost-preview" class="hbcpost-preview"></div>
+
+      <hr class="hbcpost-sep" />
+
+      <h3>Conseils</h3>
+      <ul class="hbcpost-tips">
+        <li>Un message clair et court performe mieux dans le feed.</li>
+        <li>Utilise 1 a 3 hashtags maximum pour rester lisible.</li>
+        <li>Tu peux mentionner un utilisateur via son pseudo: @pseudo.</li>
+      </ul>
+    </aside>
+  </div>
+
+  <div id="hbcpost-toast" class="hbcpost-toast" aria-live="polite"></div>
+  <pre id="hbcpost-debug" class="hbcpost-debug" style="display:none"></pre>
+</div>
+
+<style>
+  #hb-create-post-page.hbcpost {
+    --bg: #f5f8fc;
+    --card: #ffffff;
+    --text: #0f1b2d;
+    --muted: #5c6b80;
+    --stroke: #d8e2ee;
+    --navy: #0e3a5d;
+    --navy2: #174e7d;
+    --ok: #166534;
+    --danger: #991b1b;
+
+    font-family: "DM Sans", "Poppins", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    color: var(--text);
+    background:
+      radial-gradient(980px 360px at -8% -22%, rgba(23, 78, 125, 0.10), transparent 60%),
+      radial-gradient(900px 390px at 106% -24%, rgba(14, 58, 93, 0.10), transparent 62%),
+      var(--bg);
+    border: 1px solid var(--stroke);
+    border-radius: 24px;
+    padding: 22px;
+    box-shadow: 0 24px 64px rgba(8, 23, 44, 0.10);
+  }
+
+  #hb-create-post-page * {
+    box-sizing: border-box;
+  }
+
+  #hb-create-post-page .hbcpost-hero {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 14px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+  }
+
+  #hb-create-post-page h1 {
+    margin: 0;
+    font-size: 34px;
+    letter-spacing: -0.02em;
+    color: var(--navy);
+    line-height: 1.08;
+  }
+
+  #hb-create-post-page h2 {
+    margin: 0 0 12px;
+    font-size: 22px;
+    color: #10243c;
+  }
+
+  #hb-create-post-page h3 {
+    margin: 0 0 10px;
+    font-size: 16px;
+    color: #1f3854;
+  }
+
+  #hb-create-post-page .hbcpost-muted {
+    color: var(--muted);
+    font-size: 13px;
+  }
+
+  #hb-create-post-page .hbcpost-chips {
+    margin-top: 12px;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  #hb-create-post-page .hbcpost-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid var(--stroke);
+    background: #fff;
+    border-radius: 999px;
+    padding: 8px 11px;
+    font-size: 13px;
+  }
+
+  #hb-create-post-page .hbcpost-head-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  #hb-create-post-page .hbcpost-grid {
+    display: grid;
+    grid-template-columns: 1.2fr 0.8fr;
+    gap: 14px;
+  }
+
+  #hb-create-post-page .hbcpost-card {
+    background: var(--card);
+    border: 1px solid var(--stroke);
+    border-radius: 18px;
+    padding: 14px;
+    box-shadow: 0 12px 30px rgba(8, 23, 44, 0.07);
+  }
+
+  #hb-create-post-page .hbcpost-label {
+    display: block;
+    font-size: 13px;
+    font-weight: 700;
+    color: #233c58;
+    margin-bottom: 6px;
+  }
+
+  #hb-create-post-page .hbcpost-input,
+  #hb-create-post-page .hbcpost-textarea {
+    width: 100%;
+    border: 1px solid #cdd9e8;
+    border-radius: 14px;
+    padding: 10px 12px;
+    outline: none;
+    font-size: 14px;
+    background: #fff;
+    color: var(--text);
+  }
+
+  #hb-create-post-page .hbcpost-textarea {
+    resize: vertical;
+    min-height: 170px;
+    line-height: 1.55;
+  }
+
+  #hb-create-post-page .hbcpost-input:focus,
+  #hb-create-post-page .hbcpost-textarea:focus {
+    border-color: rgba(14, 58, 93, 0.50);
+    box-shadow: 0 0 0 4px rgba(14, 58, 93, 0.12);
+  }
+
+  #hb-create-post-page .hbcpost-row {
+    margin-top: 7px;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  #hb-create-post-page .hbcpost-row-space {
+    justify-content: space-between;
+  }
+
+  #hb-create-post-page .hbcpost-sep {
+    border: 0;
+    border-top: 1px solid var(--stroke);
+    margin: 14px 0;
+  }
+
+  #hb-create-post-page .hbcpost-or {
+    text-align: center;
+    color: var(--muted);
+    font-size: 13px;
+    margin: 10px 0;
+  }
+
+  #hb-create-post-page .hbcpost-note {
+    margin-top: 10px;
+    border: 1px solid #dbe6f4;
+    border-radius: 12px;
+    background: #f8fbff;
+    color: #28405f;
+    padding: 10px;
+    font-size: 13px;
+  }
+
+  #hb-create-post-page .hbcpost-actions {
+    margin-top: 14px;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  #hb-create-post-page .hbcpost-btn {
+    border: 1px solid rgba(14, 58, 93, 0.22);
+    border-radius: 14px;
+    background: rgba(14, 58, 93, 0.08);
+    color: var(--text);
+    padding: 10px 12px;
+    font-weight: 800;
+    text-decoration: none;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  #hb-create-post-page .hbcpost-btn:hover {
+    transform: translateY(-1px);
+  }
+
+  #hb-create-post-page .hbcpost-btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  #hb-create-post-page .hbcpost-btn-primary {
+    color: #fff;
+    background: linear-gradient(180deg, var(--navy2), var(--navy));
+    border-color: rgba(14, 58, 93, 0.45);
+  }
+
+  #hb-create-post-page .hbcpost-btn-ghost {
+    background: transparent;
+    border-color: #c8d5e6;
+    color: #334155;
+  }
+
+  #hb-create-post-page .hbcpost-alert,
+  #hb-create-post-page .hbcpost-success {
+    margin-top: 12px;
+    border-radius: 12px;
+    padding: 10px 12px;
+    font-size: 13px;
+  }
+
+  #hb-create-post-page .hbcpost-alert {
+    background: #fff5f5;
+    border: 1px solid #f5c3c3;
+    color: var(--danger);
+  }
+
+  #hb-create-post-page .hbcpost-success {
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    color: var(--ok);
+  }
+
+  #hb-create-post-page .hbcpost-preview {
+    border: 1px solid #d8e2ee;
+    border-radius: 14px;
+    background: #fff;
+    min-height: 220px;
+    padding: 12px;
+  }
+
+  #hb-create-post-page .hbcpost-preview-top {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  #hb-create-post-page .hbcpost-preview-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 999px;
+    border: 1px solid #c8d5e6;
+    background: #e7eff9;
+    display: grid;
+    place-items: center;
+    color: #1d4b77;
+    font-weight: 900;
+  }
+
+  #hb-create-post-page .hbcpost-preview-name {
+    font-weight: 900;
+    line-height: 1.2;
+  }
+
+  #hb-create-post-page .hbcpost-preview-meta {
+    color: var(--muted);
+    font-size: 12px;
+    margin-top: 2px;
+  }
+
+  #hb-create-post-page .hbcpost-preview-body {
+    margin-top: 12px;
+    white-space: pre-wrap;
+    line-height: 1.55;
+    font-size: 15px;
+  }
+
+  #hb-create-post-page .hbcpost-preview-tags {
+    margin-top: 10px;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  #hb-create-post-page .hbcpost-preview-tag {
+    border: 1px solid #d5e2f1;
+    background: #f4f8ff;
+    color: #1d3d70;
+    border-radius: 999px;
+    padding: 4px 8px;
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  #hb-create-post-page .hbcpost-preview-media {
+    margin-top: 12px;
+    border: 1px solid #d8e2ee;
+    border-radius: 12px;
+    overflow: hidden;
+    background: #f8fbff;
+  }
+
+  #hb-create-post-page .hbcpost-preview-media img {
+    width: 100%;
+    max-height: 340px;
+    object-fit: cover;
+    display: block;
+  }
+
+  #hb-create-post-page .hbcpost-tips {
+    margin: 0;
+    padding-left: 18px;
+    display: grid;
+    gap: 8px;
+    color: #334155;
+    font-size: 13px;
+    line-height: 1.45;
+  }
+
+  #hb-create-post-page .hbcpost-toast {
+    position: fixed;
+    right: 16px;
+    bottom: 16px;
+    z-index: 99999;
+    background: #0f172a;
+    color: #fff;
+    border-radius: 12px;
+    padding: 10px 12px;
+    opacity: 0;
+    transform: translateY(8px);
+    transition: 0.22s;
+  }
+
+  #hb-create-post-page .hbcpost-toast.on {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  #hb-create-post-page .hbcpost-debug {
+    margin-top: 12px;
+    border-radius: 12px;
+    background: #0b1220;
+    color: #dbeafe;
+    padding: 10px;
+    font-size: 12px;
+    max-height: 260px;
+    overflow: auto;
+    white-space: pre-wrap;
+  }
+
+  @media (max-width: 980px) {
+    #hb-create-post-page .hbcpost-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
+<script>
+(() => {
+  if (window.__HB_CREATE_POST_INIT__) return;
+  window.__HB_CREATE_POST_INIT__ = true;
+
+  const root = document.getElementById("hb-create-post-page");
+  if (!root) return;
+
+  const HB = window.HB_CONFIG || {};
+  const DEBUG = new URLSearchParams(window.location.search).get("debug") === "1";
+
+  const elApi = document.getElementById("hbcpost-api");
+  const elState = document.getElementById("hbcpost-state");
+  const elBack = document.getElementById("hbcpost-back");
+  const elContent = document.getElementById("hbcpost-content");
+  const elCount = document.getElementById("hbcpost-count");
+  const elFile = document.getElementById("hbcpost-file");
+  const elUrl = document.getElementById("hbcpost-url");
+  const elUploadNote = document.getElementById("hbcpost-upload-note");
+  const elPublish = document.getElementById("hbcpost-publish");
+  const elPublishTop = document.getElementById("hbcpost-publish-top");
+  const elReset = document.getElementById("hbcpost-reset");
+  const elAlert = document.getElementById("hbcpost-alert");
+  const elSuccess = document.getElementById("hbcpost-success");
+  const elPreview = document.getElementById("hbcpost-preview");
+  const elToast = document.getElementById("hbcpost-toast");
+  const elDebug = document.getElementById("hbcpost-debug");
+
+  const state = {
+    user: null,
+    posting: false,
+    localPreviewUrl: "",
+  };
+
+  function normalizeBase(v) {
+    return String(v || "").trim().replace(/\/+$/, "");
+  }
+
+  function normalizeApiBase(raw) {
+    const b = normalizeBase(raw);
+    if (!b) return "/api/v1";
+    if (/\/api\/v1$/i.test(b)) return b;
+    if (/\/api$/i.test(b)) return b + "/v1";
+    if (/^https?:\/\//i.test(b) || b.startsWith("/")) return b + "/api/v1";
+    return "/api/v1";
+  }
+
+  const API_BASE = normalizeApiBase(HB.apiBase || root.getAttribute("data-api-base") || "");
+  const WP_BASE = normalizeBase(root.getAttribute("data-wp-base") || window.location.origin);
+  const FEED_URL = String(root.getAttribute("data-feed-url") || "/posts-actualites/").trim();
+
+  if (elApi) elApi.textContent = API_BASE.replace(/^https?:\/\//, "");
+  if (elBack) elBack.href = FEED_URL;
+
+  function debug(label, payload) {
+    if (!DEBUG || !elDebug) return;
+    elDebug.style.display = "block";
+    elDebug.textContent = label + "\n" + JSON.stringify(payload, null, 2);
+  }
+
+  function setState(text) {
+    if (elState) elState.textContent = text || "Pret";
+  }
+
+  function showAlert(msg) {
+    if (!elAlert) return;
+    if (!msg) {
+      elAlert.style.display = "none";
+      elAlert.textContent = "";
+      return;
+    }
+    elAlert.textContent = msg;
+    elAlert.style.display = "block";
+  }
+
+  function showSuccess(msg) {
+    if (!elSuccess) return;
+    if (!msg) {
+      elSuccess.style.display = "none";
+      elSuccess.innerHTML = "";
+      return;
+    }
+    elSuccess.innerHTML = msg;
+    elSuccess.style.display = "block";
+  }
+
+  function showUploadNote(msg) {
+    if (!elUploadNote) return;
+    if (!msg) {
+      elUploadNote.style.display = "none";
+      elUploadNote.textContent = "";
+      return;
+    }
+    elUploadNote.textContent = msg;
+    elUploadNote.style.display = "block";
+  }
+
+  function notify(msg) {
+    if (!elToast) return;
+    elToast.textContent = msg;
+    elToast.classList.add("on");
+    clearTimeout(notify._t);
+    notify._t = setTimeout(() => elToast.classList.remove("on"), 2400);
+  }
+
+  function esc(value) {
+    return String(value == null ? "" : value)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/\"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
+  function parseJsonSafe(txt) {
+    try {
+      return txt ? JSON.parse(txt) : null;
+    } catch (_e) {
+      return null;
+    }
+  }
+
+  function token() {
+    return String(HB.token || "").trim();
+  }
+
+  function getInjectedUser() {
+    const u = HB.currentUser || window.HB_USER || null;
+    if (!u) return null;
+    return {
+      wp_id: u.wp_user_id || u.id || u.user_id || null,
+      id: u.id || u.wp_user_id || u.user_id || null,
+      user_id: u.user_id || u.id || u.wp_user_id || null,
+      email: u.email || u.user_email || "",
+      name: u.displayName || u.display_name || u.name || "",
+      roles: Array.isArray(u.roles) ? u.roles : (u.roles ? [u.roles] : []),
+    };
+  }
+
+  function normalizeWpUser(wp) {
+    const roles = wp.roles || [];
+    return {
+      wp_id: wp.id,
+      id: wp.id,
+      user_id: wp.id,
+      email: wp.email || wp.user_email || "",
+      name: wp.name || wp.display_name || wp.slug || "",
+      roles: Array.isArray(roles) ? roles : [roles],
+    };
+  }
+
+  async function fetchWpMe() {
+    const urls = [
+      WP_BASE + "/wp-json/wp/v2/users/me?context=edit",
+      WP_BASE + "/wp-json/wp/v2/users/me",
+    ];
+
+    for (const url of urls) {
+      try {
+        const res = await fetch(url, { method: "GET", credentials: "include" });
+        const txt = await res.text().catch(() => "");
+        const data = parseJsonSafe(txt);
+        debug("WP me", { url, status: res.status, body: data || txt });
+        if (res.ok && data && data.id) return normalizeWpUser(data);
+      } catch (err) {
+        debug("WP me error", { url, error: String(err) });
+      }
+    }
+
+    return null;
+  }
+
+  function rolesList() {
+    const raw = (state.user && (state.user.roles || state.user.role)) || [];
+    return (Array.isArray(raw) ? raw : [raw]).map((x) => String(x || "").toLowerCase());
+  }
+
+  function headers(withJson) {
+    const h = { Accept: "application/json" };
+    if (withJson) h["Content-Type"] = "application/json";
+
+    const t = token();
+    if (t) h["Authorization"] = "Bearer " + t;
+
+    if (state.user) {
+      const wpId = state.user.wp_id || state.user.id || state.user.user_id;
+      if (wpId != null) h["X-WP-User-Id"] = String(wpId);
+      if (state.user.email) h["X-User-Email"] = String(state.user.email);
+      const roles = rolesList();
+      if (roles.length) h["X-WP-User-Roles"] = roles.join(",");
+    }
+
+    return h;
+  }
+
+  function apiUrl(path) {
+    return API_BASE + (path.startsWith("/") ? path : "/" + path);
+  }
+
+  async function apiPost(path, payload) {
+    const url = apiUrl(path);
+    const res = await fetch(url, {
+      method: "POST",
+      headers: headers(true),
+      body: JSON.stringify(payload || {}),
+    });
+    const txt = await res.text().catch(() => "");
+    const data = parseJsonSafe(txt);
+    debug("POST " + path, { status: res.status, body: data || txt, payload: payload || {} });
+
+    if (!res.ok) {
+      const msg = (data && data.detail) ? data.detail : ("HTTP " + res.status);
+      throw new Error(msg);
+    }
+
+    return data;
+  }
+
+  async function ensureUser() {
+    state.user = getInjectedUser();
+
+    if (!state.user || !(state.user.wp_id || state.user.id || state.user.user_id)) {
+      const wpMe = await fetchWpMe();
+      if (wpMe) {
+        state.user = wpMe;
+        window.HB_USER = wpMe;
+      }
+    }
+  }
+
+  function extractHashtags(content) {
+    const m = String(content || "").match(/#([\p{L}\p{N}_-]+)/gu) || [];
+    return Array.from(new Set(m.map((x) => x.replace(/^#/, "").toLowerCase()))).slice(0, 8);
+  }
+
+  function initials(name) {
+    const p = String(name || "").trim().split(/\s+/).filter(Boolean);
+    if (!p.length) return "HB";
+    if (p.length === 1) return p[0].slice(0, 2).toUpperCase();
+    return (p[0][0] + p[1][0]).toUpperCase();
+  }
+
+  function currentPreviewImage() {
+    const file = elFile && elFile.files && elFile.files.length ? elFile.files[0] : null;
+    const url = String(elUrl && elUrl.value ? elUrl.value : "").trim();
+
+    if (file && state.localPreviewUrl) return state.localPreviewUrl;
+    if (url) return url;
+    return "";
+  }
+
+  function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const out = String(reader.result || "");
+        const idx = out.indexOf(",");
+        resolve(idx >= 0 ? out.slice(idx + 1) : out);
+      };
+      reader.onerror = () => reject(new Error("Lecture fichier impossible"));
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function renderPreview() {
+    const content = String(elContent && elContent.value ? elContent.value : "");
+    const tags = extractHashtags(content);
+    const previewImg = currentPreviewImage();
+
+    const name = state.user ? (state.user.name || state.user.email || "Vous") : "Utilisateur";
+
+    elPreview.innerHTML =
+      '<div class="hbcpost-preview-top">' +
+        '<div class="hbcpost-preview-avatar">' + esc(initials(name)) + '</div>' +
+        '<div>' +
+          '<div class="hbcpost-preview-name">' + esc(name) + '</div>' +
+          '<div class="hbcpost-preview-meta">A l\'instant</div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="hbcpost-preview-body">' + esc(content || "Ton post apparaitra ici...") + '</div>' +
+      (tags.length ? ('<div class="hbcpost-preview-tags">' + tags.map((t) => '<span class="hbcpost-preview-tag">#' + esc(t) + '</span>').join('') + '</div>') : '') +
+      (previewImg ? ('<div class="hbcpost-preview-media"><img src="' + esc(previewImg) + '" alt="Apercu media"></div>') : '');
+
+    if (elCount) elCount.textContent = String(content.length) + " / 2500";
+  }
+
+  async function uploadFileIfNeeded() {
+    const file = elFile && elFile.files && elFile.files.length ? elFile.files[0] : null;
+    if (!file) return "";
+
+    if (file.size > 10 * 1024 * 1024) {
+      throw new Error("Fichier trop volumineux (max 10 Mo)");
+    }
+
+    showUploadNote("Upload en cours...");
+    const base64 = await fileToBase64(file);
+    const uploaded = await apiPost("/assets/upload-base64", {
+      filename: file.name || "upload.bin",
+      media_type: file.type || "application/octet-stream",
+      data_base64: base64,
+    });
+    if (!uploaded || !uploaded.public_url) {
+      throw new Error("Reponse upload invalide");
+    }
+
+    showUploadNote("Upload termine");
+    return String(uploaded.public_url || "");
+  }
+
+  async function publish() {
+    if (state.posting) return;
+
+    showAlert("");
+    showSuccess("");
+
+    const content = String(elContent && elContent.value ? elContent.value : "").trim();
+    if (!content) {
+      showAlert("Le contenu est obligatoire.");
+      return;
+    }
+
+    state.posting = true;
+    setState("Publication...");
+    if (elPublish) elPublish.disabled = true;
+    if (elPublishTop) elPublishTop.disabled = true;
+
+    try {
+      let assetUrl = "";
+      const direct = String(elUrl && elUrl.value ? elUrl.value : "").trim();
+
+      const hasFile = !!(elFile && elFile.files && elFile.files.length);
+      if (hasFile) {
+        assetUrl = await uploadFileIfNeeded();
+      } else if (direct) {
+        assetUrl = direct;
+      }
+
+      const created = await apiPost("/posts", {
+        content,
+        asset_url: assetUrl || null,
+      });
+
+      notify("Post publie");
+      showUploadNote("");
+      showSuccess(
+        'Post publie avec succes. <a href="' + esc(FEED_URL) + '" style="font-weight:800;color:#14532d">Voir le feed</a>'
+      );
+
+      if (elContent) elContent.value = "";
+      if (elFile) elFile.value = "";
+      if (elUrl) elUrl.value = "";
+      if (state.localPreviewUrl) {
+        URL.revokeObjectURL(state.localPreviewUrl);
+        state.localPreviewUrl = "";
+      }
+
+      renderPreview();
+      debug("post_created", created || {});
+
+      setTimeout(() => {
+        window.location.href = FEED_URL;
+      }, 900);
+    } catch (err) {
+      console.error(err);
+      const msg = String(err && err.message ? err.message : err);
+      showAlert(msg);
+      notify(msg);
+      setState("Erreur");
+    } finally {
+      state.posting = false;
+      if (elPublish) elPublish.disabled = false;
+      if (elPublishTop) elPublishTop.disabled = false;
+      if (elState && elState.textContent !== "Erreur") setState("Pret");
+    }
+  }
+
+  function resetForm() {
+    showAlert("");
+    showSuccess("");
+    showUploadNote("");
+
+    if (elContent) elContent.value = "";
+    if (elFile) elFile.value = "";
+    if (elUrl) elUrl.value = "";
+
+    if (state.localPreviewUrl) {
+      URL.revokeObjectURL(state.localPreviewUrl);
+      state.localPreviewUrl = "";
+    }
+
+    renderPreview();
+  }
+
+  if (elContent) {
+    elContent.addEventListener("input", renderPreview);
+  }
+
+  if (elUrl) {
+    elUrl.addEventListener("input", () => {
+      showUploadNote("");
+      renderPreview();
+    });
+  }
+
+  if (elFile) {
+    elFile.addEventListener("change", () => {
+      showUploadNote("");
+      if (state.localPreviewUrl) {
+        URL.revokeObjectURL(state.localPreviewUrl);
+        state.localPreviewUrl = "";
+      }
+
+      const file = elFile.files && elFile.files.length ? elFile.files[0] : null;
+      if (file) {
+        state.localPreviewUrl = URL.createObjectURL(file);
+      }
+      renderPreview();
+    });
+  }
+
+  if (elPublish) {
+    elPublish.addEventListener("click", publish);
+  }
+
+  if (elPublishTop) {
+    elPublishTop.addEventListener("click", publish);
+  }
+
+  if (elReset) {
+    elReset.addEventListener("click", resetForm);
+  }
+
+  (async function boot() {
+    try {
+      setState("Initialisation...");
+      await ensureUser();
+
+      if (!state.user) {
+        showAlert("Connecte-toi pour publier un post.");
+        if (elPublish) elPublish.disabled = true;
+        if (elPublishTop) elPublishTop.disabled = true;
+        setState("Non connecte");
+      } else {
+        setState("Pret");
+      }
+
+      renderPreview();
+    } catch (err) {
+      console.error(err);
+      showAlert(String(err && err.message ? err.message : err));
+      setState("Erreur");
+    }
+  })();
+})();
+</script>

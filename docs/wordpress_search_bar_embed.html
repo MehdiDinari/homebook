@@ -1,0 +1,386 @@
+<div id="hb-searchbar" class="hbsb" data-api-base="" data-profile-url="/profil/" data-books-url="/livres/" data-salle-url="/salle/" data-posts-url="/posts-actualites/">
+  <div class="hbsb-wrap">
+    <span class="hbsb-icon" aria-hidden="true">🔎</span>
+    <input id="hbsb-input" type="search" placeholder="Rechercher personne, livre, salle, post..." autocomplete="off" />
+    <button id="hbsb-clear" type="button" aria-label="Effacer">✕</button>
+  </div>
+  <div id="hbsb-panel" class="hbsb-panel" hidden>
+    <div id="hbsb-state" class="hbsb-state">Tape au moins 2 caracteres.</div>
+    <div id="hbsb-results" class="hbsb-results"></div>
+  </div>
+</div>
+
+<style>
+  #hb-searchbar.hbsb {
+    --bg: #ffffff;
+    --text: #10233d;
+    --muted: #5f7085;
+    --stroke: #d7e4f6;
+    --navy: #0f3d69;
+    --navy2: #1c5d98;
+    --chip: #edf5ff;
+    position: relative;
+    width: min(760px, 100%);
+    font-family: "DM Sans", "Segoe UI", system-ui, sans-serif;
+  }
+
+  #hb-searchbar * { box-sizing: border-box; }
+
+  #hb-searchbar .hbsb-wrap {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 8px;
+    background: var(--bg);
+    border: 1px solid var(--stroke);
+    border-radius: 14px;
+    padding: 10px 12px;
+    box-shadow: 0 12px 30px rgba(15, 33, 58, 0.08);
+  }
+
+  #hb-searchbar .hbsb-icon {
+    color: var(--navy);
+    font-size: 15px;
+    line-height: 1;
+  }
+
+  #hb-searchbar input {
+    width: 100%;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: var(--text);
+    font-size: 14px;
+  }
+
+  #hb-searchbar input::placeholder { color: #7b8fa8; }
+
+  #hb-searchbar #hbsb-clear {
+    border: 0;
+    background: #f2f7ff;
+    color: #3f5878;
+    border-radius: 8px;
+    width: 26px;
+    height: 26px;
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    font-size: 12px;
+  }
+
+  #hb-searchbar .hbsb-panel {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    right: 0;
+    z-index: 5000;
+    background: #fff;
+    border: 1px solid var(--stroke);
+    border-radius: 14px;
+    box-shadow: 0 24px 46px rgba(15, 33, 58, 0.14);
+    overflow: hidden;
+  }
+
+  #hb-searchbar .hbsb-state {
+    padding: 10px 12px;
+    border-bottom: 1px solid #e5edf8;
+    color: var(--muted);
+    font-size: 12px;
+    background: #f9fcff;
+  }
+
+  #hb-searchbar .hbsb-results {
+    max-height: min(62vh, 420px);
+    overflow: auto;
+    display: grid;
+  }
+
+  #hb-searchbar .hbsb-item {
+    border: 0;
+    border-bottom: 1px solid #edf2fa;
+    background: #fff;
+    text-align: left;
+    padding: 10px 12px;
+    cursor: pointer;
+    display: grid;
+    gap: 5px;
+  }
+
+  #hb-searchbar .hbsb-item:last-child { border-bottom: 0; }
+  #hb-searchbar .hbsb-item:hover { background: #f7fbff; }
+
+  #hb-searchbar .hbsb-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+  }
+
+  #hb-searchbar .hbsb-title {
+    font-size: 14px;
+    color: var(--text);
+    font-weight: 800;
+    line-height: 1.25;
+    margin: 0;
+  }
+
+  #hb-searchbar .hbsb-sub {
+    font-size: 12px;
+    color: var(--muted);
+    margin: 0;
+    line-height: 1.35;
+  }
+
+  #hb-searchbar .hbsb-kind {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    border: 1px solid #d6e3f6;
+    background: var(--chip);
+    color: #30547b;
+    font-size: 11px;
+    padding: 4px 8px;
+    font-weight: 800;
+    white-space: nowrap;
+  }
+</style>
+
+<script>
+(() => {
+  if (window.__HB_SEARCH_BAR_INIT__) return;
+  window.__HB_SEARCH_BAR_INIT__ = true;
+
+  const root = document.getElementById("hb-searchbar");
+  if (!root) return;
+
+  const HB = window.HB_CONFIG || {};
+  const elInput = root.querySelector("#hbsb-input");
+  const elClear = root.querySelector("#hbsb-clear");
+  const elPanel = root.querySelector("#hbsb-panel");
+  const elState = root.querySelector("#hbsb-state");
+  const elResults = root.querySelector("#hbsb-results");
+
+  const PROFILE_URL = String(root.getAttribute("data-profile-url") || "/profil/").trim();
+  const BOOKS_URL = String(root.getAttribute("data-books-url") || "/livres/").trim();
+  const SALLE_URL = String(root.getAttribute("data-salle-url") || "/salle/").trim();
+  const POSTS_URL = String(root.getAttribute("data-posts-url") || "/posts-actualites/").trim();
+
+  const state = {
+    user: null,
+    rows: [],
+    loading: false,
+    reqSeq: 0,
+  };
+
+  function esc(v) {
+    return String(v == null ? "" : v)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/\"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
+  function normalizeBase(v) {
+    return String(v || "").trim().replace(/\/+$/, "");
+  }
+
+  function normalizeApiBase(raw) {
+    const b = normalizeBase(raw);
+    if (!b) return "/api/v1";
+    if (/\/api\/v1$/i.test(b)) return b;
+    if (/\/api$/i.test(b)) return b + "/v1";
+    if (/^https?:\/\//i.test(b) || b.startsWith("/")) return b + "/api/v1";
+    return "/api/v1";
+  }
+
+  const API_BASE = normalizeApiBase(HB.apiBase || root.getAttribute("data-api-base") || "");
+
+  function rolesList() {
+    const raw = (state.user && (state.user.roles || state.user.role)) || [];
+    return (Array.isArray(raw) ? raw : [raw]).map((x) => String(x || "").toLowerCase()).filter(Boolean);
+  }
+
+  function token() {
+    return String(HB.token || "").trim();
+  }
+
+  function getInjectedUser() {
+    const u = HB.currentUser || window.HB_USER || null;
+    if (!u) return null;
+    return {
+      wp_id: u.wp_user_id || u.id || u.user_id || null,
+      id: u.id || u.wp_user_id || u.user_id || null,
+      user_id: u.user_id || u.id || u.wp_user_id || null,
+      email: u.email || u.user_email || "",
+      roles: Array.isArray(u.roles) ? u.roles : [],
+    };
+  }
+
+  function headers() {
+    const h = { Accept: "application/json" };
+    const t = token();
+    if (t) h["Authorization"] = "Bearer " + t;
+
+    if (state.user) {
+      const wpId = state.user.wp_id || state.user.id || state.user.user_id;
+      if (wpId != null) h["X-WP-User-Id"] = String(wpId);
+      if (state.user.email) h["X-User-Email"] = String(state.user.email);
+      const roles = rolesList();
+      if (roles.length) h["X-WP-User-Roles"] = roles.join(",");
+    }
+
+    return h;
+  }
+
+  function parseJsonSafe(txt) {
+    try { return txt ? JSON.parse(txt) : null; } catch (_e) { return null; }
+  }
+
+  async function apiGet(path) {
+    const res = await fetch(API_BASE + (path.startsWith("/") ? path : "/" + path), {
+      method: "GET",
+      headers: headers(),
+      credentials: "same-origin",
+    });
+    const txt = await res.text().catch(() => "");
+    const data = parseJsonSafe(txt);
+    if (!res.ok) {
+      throw new Error((data && data.detail) ? data.detail : ("HTTP " + res.status));
+    }
+    return data;
+  }
+
+  function kindLabel(kind) {
+    const k = String(kind || "").toLowerCase();
+    if (k === "user") return "Personne";
+    if (k === "book") return "Livre";
+    if (k === "room") return "Salle";
+    if (k === "post") return "Post";
+    return "Resultat";
+  }
+
+  function buildTarget(item) {
+    const type = String(item && item.type || "");
+    const id = String(item && item.id || "");
+    if (type === "user") {
+      return String(PROFILE_URL).split("?")[0] + "?user_id=" + encodeURIComponent(id);
+    }
+    if (type === "room") {
+      return String(SALLE_URL).split("?")[0] + "?room_id=" + encodeURIComponent(id);
+    }
+    if (type === "book") {
+      return String(BOOKS_URL).split("?")[0] + "?work_id=" + encodeURIComponent(id);
+    }
+    if (type === "post") {
+      return String(POSTS_URL).split("?")[0] + "?post_id=" + encodeURIComponent(id);
+    }
+    return "";
+  }
+
+  function openPanel() {
+    elPanel.hidden = false;
+  }
+
+  function closePanel() {
+    elPanel.hidden = true;
+  }
+
+  function renderRows() {
+    if (!state.rows.length) {
+      elState.textContent = "Aucun resultat.";
+      elResults.innerHTML = "";
+      return;
+    }
+
+    elState.textContent = state.rows.length + " resultat(s)";
+    elResults.innerHTML = state.rows.map((item, idx) => {
+      const target = buildTarget(item);
+      return (
+        '<button class="hbsb-item" type="button" data-idx="' + esc(idx) + '" data-target="' + esc(target) + '">' +
+          '<div class="hbsb-top">' +
+            '<p class="hbsb-title">' + esc(item.title || "Resultat") + '</p>' +
+            '<span class="hbsb-kind">' + esc(kindLabel(item.type)) + '</span>' +
+          '</div>' +
+          '<p class="hbsb-sub">' + esc(item.subtitle || "") + '</p>' +
+        '</button>'
+      );
+    }).join("");
+  }
+
+  async function runSearch(rawQuery) {
+    const query = String(rawQuery || "").trim();
+    if (!query || query.length < 2) {
+      state.rows = [];
+      elState.textContent = "Tape au moins 2 caracteres.";
+      elResults.innerHTML = "";
+      return;
+    }
+
+    const reqId = ++state.reqSeq;
+    state.loading = true;
+    elState.textContent = "Recherche...";
+    openPanel();
+
+    try {
+      const result = await apiGet("/search?q=" + encodeURIComponent(query) + "&types=users,books,rooms,posts&limit=12");
+      if (reqId !== state.reqSeq) return;
+      state.rows = Array.isArray(result && result.items) ? result.items : [];
+      renderRows();
+    } catch (e) {
+      if (reqId !== state.reqSeq) return;
+      state.rows = [];
+      elState.textContent = String(e && e.message ? e.message : e);
+      elResults.innerHTML = "";
+    } finally {
+      if (reqId === state.reqSeq) state.loading = false;
+    }
+  }
+
+  function bindEvents() {
+    elInput.addEventListener("focus", () => {
+      openPanel();
+      if (!elInput.value.trim()) {
+        elState.textContent = "Tape au moins 2 caracteres.";
+      }
+    });
+
+    elInput.addEventListener("input", () => {
+      clearTimeout(elInput._t);
+      elInput._t = setTimeout(() => runSearch(elInput.value), 180);
+    });
+
+    elClear.addEventListener("click", () => {
+      elInput.value = "";
+      state.rows = [];
+      elResults.innerHTML = "";
+      elState.textContent = "Tape au moins 2 caracteres.";
+      elInput.focus();
+    });
+
+    root.addEventListener("click", (ev) => {
+      const btn = ev.target.closest("[data-idx]");
+      if (!btn) return;
+      const target = String(btn.getAttribute("data-target") || "").trim();
+      if (target) {
+        window.location.href = target;
+      }
+    });
+
+    document.addEventListener("click", (ev) => {
+      if (!root.contains(ev.target)) closePanel();
+    });
+
+    document.addEventListener("keydown", (ev) => {
+      if (ev.key === "Escape") closePanel();
+    });
+  }
+
+  function boot() {
+    state.user = getInjectedUser();
+    bindEvents();
+  }
+
+  boot();
+})();
+</script>

@@ -1,0 +1,1335 @@
+<div id="hb-messages-page" class="hbm" data-api-base="" data-salle-url="/salle/" data-load-interval-ms="45000">
+  <header class="hbm-hero">
+    <div class="hbm-hero-left">
+      <h1>Messages</h1>
+      <p class="hbm-muted">Recherche utilisateurs, amis, groupes et conversations.</p>
+      <div class="hbm-chips">
+        <span class="hbm-chip">API: <b id="hbm-api">-</b></span>
+        <span class="hbm-chip">Conversations: <b id="hbm-count">0</b></span>
+        <span class="hbm-chip">Invites groupe: <b id="hbm-inv-count">0</b></span>
+        <span class="hbm-chip">Etat: <b id="hbm-state">Pret</b></span>
+      </div>
+    </div>
+    <div class="hbm-hero-actions">
+      <button id="hbm-refresh" class="hbm-btn" type="button">Actualiser</button>
+      <a id="hbm-go-notifs" class="hbm-btn hbm-btn-primary" href="/notifications/">Notifications</a>
+    </div>
+  </header>
+
+  <section class="hbm-grid hbm-grid-two">
+    <article class="hbm-card">
+      <div class="hbm-card-head">
+        <h2>Trouver des utilisateurs</h2>
+        <p>Ajoute en ami, accepte les demandes, puis lance un message prive.</p>
+      </div>
+      <div class="hbm-card-body">
+        <div class="hbm-toolbar">
+          <input id="hbm-user-search" type="search" placeholder="Nom, email..." />
+        </div>
+        <div id="hbm-user-results" class="hbm-list">
+          <div class="hbm-empty">Commence une recherche.</div>
+        </div>
+      </div>
+    </article>
+
+    <article class="hbm-card">
+      <div class="hbm-card-head">
+        <h2>Demandes d'amis recues</h2>
+        <p>Accepte ou refuse les demandes en attente.</p>
+      </div>
+      <div class="hbm-card-body">
+        <div id="hbm-incoming-list" class="hbm-list">
+          <div class="hbm-empty">Aucune demande.</div>
+        </div>
+      </div>
+    </article>
+
+    <article class="hbm-card">
+      <div class="hbm-card-head">
+        <h2 id="hbm-group-title-label">Creer un groupe</h2>
+        <p id="hbm-group-rules">Le nom est obligatoire. Les invites peuvent accepter ensuite.</p>
+      </div>
+      <div class="hbm-card-body">
+        <div class="hbm-form-grid">
+          <label class="hbm-field">
+            <span>Nom du groupe</span>
+            <input id="hbm-group-title" type="text" maxlength="120" placeholder="Ex: Groupe Francais B2" />
+          </label>
+          <label class="hbm-field">
+            <span>Rechercher a inviter</span>
+            <input id="hbm-group-search" type="search" placeholder="Nom, email..." />
+          </label>
+        </div>
+
+        <div id="hbm-group-picked" class="hbm-picks">
+          <span class="hbm-pick-empty">Aucun membre selectionne.</span>
+        </div>
+
+        <div id="hbm-group-results" class="hbm-list" style="margin-top:10px;">
+          <div class="hbm-empty">Rechercher pour ajouter des invites.</div>
+        </div>
+
+        <div class="hbm-row">
+          <button id="hbm-create-group" class="hbm-btn hbm-btn-primary" type="button">Creer le groupe</button>
+          <span id="hbm-group-feedback" class="hbm-muted"></span>
+        </div>
+      </div>
+    </article>
+
+    <article class="hbm-card">
+      <div class="hbm-card-head">
+        <h2>Invitations de groupe recues</h2>
+        <p>Accepte pour rejoindre la salle ou refuse.</p>
+      </div>
+      <div class="hbm-card-body">
+        <div id="hbm-invites-list" class="hbm-list">
+          <div class="hbm-empty">Aucune invitation.</div>
+        </div>
+      </div>
+    </article>
+  </section>
+
+  <section class="hbm-grid" style="margin-top:12px;">
+    <article class="hbm-card">
+      <div class="hbm-card-head hbm-card-head-spread">
+        <div>
+          <h2>Conversations</h2>
+          <p>Filtre, cherche, puis ouvre la salle choisie.</p>
+        </div>
+        <div class="hbm-tabs" role="tablist" aria-label="Filtres">
+          <button class="hbm-tab is-active" type="button" data-filter="all">Toutes</button>
+          <button class="hbm-tab" type="button" data-filter="unread">Non lues</button>
+        </div>
+      </div>
+      <div class="hbm-card-body">
+        <div class="hbm-toolbar">
+          <input id="hbm-search" type="search" placeholder="Rechercher par titre, type, membre..." />
+        </div>
+        <div id="hbm-alert" class="hbm-alert" style="display:none"></div>
+        <div id="hbm-list" class="hbm-list">
+          <div class="hbm-empty">Chargement...</div>
+        </div>
+      </div>
+    </article>
+  </section>
+</div>
+
+<style>
+  #hb-messages-page.hbm {
+    --bg: #f4f8ff;
+    --card: #ffffff;
+    --text: #0f243d;
+    --muted: #5d7087;
+    --stroke: #d8e5f7;
+    --primary: #0f3d69;
+    --primary-2: #1a568f;
+    --pill: #edf5ff;
+    --ok: #0d8d61;
+    --warn: #b45309;
+    --danger: #b91c1c;
+    font-family: "Inter", "Segoe UI", Arial, sans-serif;
+    color: var(--text);
+    background:
+      radial-gradient(920px 400px at -10% -30%, rgba(26, 86, 143, 0.18), transparent 60%),
+      radial-gradient(920px 360px at 110% -20%, rgba(15, 61, 105, 0.14), transparent 58%),
+      var(--bg);
+    border: 1px solid var(--stroke);
+    border-radius: 22px;
+    padding: 18px;
+    box-shadow: 0 20px 54px rgba(15, 33, 58, 0.09);
+  }
+
+  #hb-messages-page * { box-sizing: border-box; }
+
+  #hb-messages-page .hbm-hero {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+  }
+
+  #hb-messages-page h1 {
+    margin: 0;
+    font-size: clamp(26px, 4vw, 36px);
+    letter-spacing: -0.03em;
+    color: var(--primary);
+    line-height: 1.05;
+  }
+
+  #hb-messages-page .hbm-muted {
+    margin: 8px 0 0;
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  #hb-messages-page .hbm-chips {
+    margin-top: 10px;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  #hb-messages-page .hbm-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px solid var(--stroke);
+    border-radius: 999px;
+    background: #fff;
+    padding: 7px 10px;
+    font-size: 12px;
+    color: var(--muted);
+    font-weight: 700;
+  }
+
+  #hb-messages-page .hbm-hero-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  #hb-messages-page .hbm-btn {
+    border: 1px solid #c8daef;
+    border-radius: 12px;
+    background: #f3f8ff;
+    color: var(--primary);
+    font-size: 13px;
+    font-weight: 800;
+    cursor: pointer;
+    padding: 10px 12px;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+  }
+
+  #hb-messages-page .hbm-btn:hover { filter: brightness(0.98); }
+
+  #hb-messages-page .hbm-btn-primary {
+    color: #fff;
+    border-color: rgba(15, 61, 105, 0.45);
+    background: linear-gradient(180deg, var(--primary-2), var(--primary));
+  }
+
+  #hb-messages-page .hbm-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  #hb-messages-page .hbm-grid-two {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  #hb-messages-page .hbm-card {
+    border: 1px solid var(--stroke);
+    border-radius: 18px;
+    background: var(--card);
+    box-shadow: 0 12px 34px rgba(15, 33, 58, 0.08);
+    overflow: hidden;
+  }
+
+  #hb-messages-page .hbm-card-head {
+    padding: 14px;
+    border-bottom: 1px solid var(--stroke);
+    background: linear-gradient(180deg, #fff, #f9fcff);
+  }
+
+  #hb-messages-page .hbm-card-head h2 {
+    margin: 0;
+    font-size: 16px;
+    color: var(--primary);
+  }
+
+  #hb-messages-page .hbm-card-head p {
+    margin: 6px 0 0;
+    color: var(--muted);
+    font-size: 12px;
+  }
+
+  #hb-messages-page .hbm-card-head-spread {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  #hb-messages-page .hbm-card-body { padding: 14px; }
+
+  #hb-messages-page .hbm-form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  #hb-messages-page .hbm-field {
+    display: grid;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--primary);
+    font-weight: 700;
+  }
+
+  #hb-messages-page .hbm-field input,
+  #hb-messages-page .hbm-toolbar input {
+    width: 100%;
+    border: 1px solid #c6d9ef;
+    border-radius: 10px;
+    background: #fff;
+    padding: 10px 11px;
+    font-size: 14px;
+    color: var(--text);
+    outline: none;
+  }
+
+  #hb-messages-page .hbm-field input:focus,
+  #hb-messages-page .hbm-toolbar input:focus {
+    border-color: #2a6ba8;
+    box-shadow: 0 0 0 4px rgba(26, 86, 143, 0.16);
+  }
+
+  #hb-messages-page .hbm-row {
+    margin-top: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  #hb-messages-page .hbm-tabs {
+    display: inline-flex;
+    gap: 6px;
+    padding: 4px;
+    border: 1px solid var(--stroke);
+    border-radius: 999px;
+    background: #fff;
+  }
+
+  #hb-messages-page .hbm-tab {
+    border: 0;
+    background: transparent;
+    color: var(--muted);
+    border-radius: 999px;
+    padding: 8px 10px;
+    font-size: 12px;
+    font-weight: 800;
+    cursor: pointer;
+  }
+
+  #hb-messages-page .hbm-tab.is-active {
+    color: var(--primary);
+    background: var(--pill);
+  }
+
+  #hb-messages-page .hbm-toolbar { margin-bottom: 10px; }
+
+  #hb-messages-page .hbm-alert {
+    margin-bottom: 10px;
+    border-radius: 10px;
+    border: 1px solid #efb6b6;
+    background: #fff2f2;
+    color: #7f1d1d;
+    font-size: 12px;
+    padding: 9px 10px;
+  }
+
+  #hb-messages-page .hbm-list {
+    display: grid;
+    gap: 8px;
+  }
+
+  #hb-messages-page .hbm-room,
+  #hb-messages-page .hbm-user,
+  #hb-messages-page .hbm-invite {
+    border: 1px solid #d4e2f5;
+    border-radius: 12px;
+    background: #fbfdff;
+    padding: 10px;
+    display: grid;
+    gap: 8px;
+  }
+
+  #hb-messages-page .hbm-room-top,
+  #hb-messages-page .hbm-user-top,
+  #hb-messages-page .hbm-invite-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+  }
+
+  #hb-messages-page .hbm-user-id {
+    color: var(--muted);
+    font-size: 12px;
+  }
+
+  #hb-messages-page .hbm-room-title,
+  #hb-messages-page .hbm-user-title,
+  #hb-messages-page .hbm-invite-title {
+    margin: 0;
+    font-size: 14px;
+    color: var(--text);
+    font-weight: 800;
+  }
+
+  #hb-messages-page .hbm-room-meta,
+  #hb-messages-page .hbm-user-meta,
+  #hb-messages-page .hbm-invite-meta {
+    margin: 0;
+    color: var(--muted);
+    font-size: 12px;
+  }
+
+  #hb-messages-page .hbm-room-pill,
+  #hb-messages-page .hbm-role-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border-radius: 999px;
+    border: 1px solid #d4e2f5;
+    background: #fff;
+    font-size: 11px;
+    color: #4f657f;
+    padding: 5px 8px;
+    font-weight: 800;
+    white-space: nowrap;
+  }
+
+  #hb-messages-page .hbm-user-actions,
+  #hb-messages-page .hbm-room-actions,
+  #hb-messages-page .hbm-invite-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  #hb-messages-page .hbm-room-btn,
+  #hb-messages-page .hbm-user-btn,
+  #hb-messages-page .hbm-invite-btn {
+    border: 1px solid #c7d9f0;
+    border-radius: 9px;
+    background: #fff;
+    color: var(--primary);
+    font-size: 12px;
+    font-weight: 800;
+    padding: 7px 9px;
+    cursor: pointer;
+    text-decoration: none;
+  }
+
+  #hb-messages-page .hbm-room-btn.primary,
+  #hb-messages-page .hbm-user-btn.primary,
+  #hb-messages-page .hbm-invite-btn.primary {
+    color: #fff;
+    border-color: rgba(15, 61, 105, 0.5);
+    background: linear-gradient(180deg, #1a568f, #0f3d69);
+  }
+
+  #hb-messages-page .hbm-picks {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    border: 1px dashed #cfe0f5;
+    background: #fff;
+    border-radius: 10px;
+    padding: 8px;
+    min-height: 44px;
+  }
+
+  #hb-messages-page .hbm-pick {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px solid #c6d9ef;
+    background: #f3f8ff;
+    border-radius: 999px;
+    padding: 6px 9px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #1f4066;
+  }
+
+  #hb-messages-page .hbm-pick button {
+    border: 0;
+    background: transparent;
+    color: #335f8d;
+    cursor: pointer;
+    font-weight: 900;
+  }
+
+  #hb-messages-page .hbm-pick-empty {
+    color: var(--muted);
+    font-size: 12px;
+    align-self: center;
+  }
+
+  #hb-messages-page .hbm-empty {
+    border: 1px dashed #cfe0f5;
+    border-radius: 12px;
+    background: #fff;
+    color: var(--muted);
+    font-size: 13px;
+    padding: 12px;
+  }
+
+  @media (max-width: 980px) {
+    #hb-messages-page .hbm-grid-two { grid-template-columns: 1fr; }
+  }
+
+  @media (max-width: 860px) {
+    #hb-messages-page .hbm-form-grid { grid-template-columns: 1fr; }
+  }
+</style>
+
+<script>
+(() => {
+  if (window.__HB_MESSAGES_PAGE_INIT__) return;
+  window.__HB_MESSAGES_PAGE_INIT__ = true;
+
+  const root = document.getElementById("hb-messages-page");
+  if (!root) return;
+
+  const HB = window.HB_CONFIG || {};
+  const DEBUG = new URLSearchParams(window.location.search).get("debug") === "1";
+
+  const elApi = root.querySelector("#hbm-api");
+  const elCount = root.querySelector("#hbm-count");
+  const elInvCount = root.querySelector("#hbm-inv-count");
+  const elState = root.querySelector("#hbm-state");
+  const elAlert = root.querySelector("#hbm-alert");
+  const elList = root.querySelector("#hbm-list");
+  const elRefresh = root.querySelector("#hbm-refresh");
+  const elSearch = root.querySelector("#hbm-search");
+  const tabButtons = Array.from(root.querySelectorAll(".hbm-tab"));
+
+  const elUserSearch = root.querySelector("#hbm-user-search");
+  const elUserResults = root.querySelector("#hbm-user-results");
+  const elIncoming = root.querySelector("#hbm-incoming-list");
+
+  const elGroupTitle = root.querySelector("#hbm-group-title");
+  const elGroupTitleLabel = root.querySelector("#hbm-group-title-label");
+  const elGroupRules = root.querySelector("#hbm-group-rules");
+  const elGroupSearch = root.querySelector("#hbm-group-search");
+  const elGroupResults = root.querySelector("#hbm-group-results");
+  const elGroupPicked = root.querySelector("#hbm-group-picked");
+  const elGroupCreate = root.querySelector("#hbm-create-group");
+  const elGroupFeedback = root.querySelector("#hbm-group-feedback");
+
+  const elInvitesList = root.querySelector("#hbm-invites-list");
+
+  const SALLE_URL = String(root.getAttribute("data-salle-url") || "/salle/").trim();
+  const LOAD_INTERVAL = Math.max(15000, Number(root.getAttribute("data-load-interval-ms") || 45000) || 45000);
+
+  const state = {
+    user: null,
+    rooms: [],
+    filter: "all",
+    query: "",
+    loading: false,
+    timer: null,
+    backoffMs: 0,
+
+    friends: [],
+    incomingRequests: [],
+    outgoingRequests: [],
+    userSearchResults: [],
+
+    groupSearchResults: [],
+    groupSelected: [],
+    groupMaxMembers: 5,
+    groupInviteAny: false,
+
+    invites: [],
+  };
+
+  function debug(label, payload) {
+    if (!DEBUG) return;
+    console.log("[messages]", label, payload);
+  }
+
+  function normalizeBase(v) {
+    return String(v || "").trim().replace(/\/+$/, "");
+  }
+
+  function normalizeApiBase(raw) {
+    const b = normalizeBase(raw);
+    if (!b) return "/api/v1";
+    if (/\/api\/v1$/i.test(b)) return b;
+    if (/\/api$/i.test(b)) return b + "/v1";
+    if (/^https?:\/\//i.test(b) || b.startsWith("/")) return b + "/api/v1";
+    return "/api/v1";
+  }
+
+  const API_BASE = normalizeApiBase(HB.apiBase || root.getAttribute("data-api-base") || "");
+  if (elApi) elApi.textContent = API_BASE.replace(/^https?:\/\//, "");
+
+  function esc(v) {
+    return String(v == null ? "" : v)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/\"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
+  function setState(text) {
+    if (elState) elState.textContent = text || "Pret";
+  }
+
+  function showAlert(msg) {
+    if (!elAlert) return;
+    if (!msg) {
+      elAlert.style.display = "none";
+      elAlert.textContent = "";
+      return;
+    }
+    elAlert.textContent = msg;
+    elAlert.style.display = "block";
+  }
+
+  function token() {
+    return String(HB.token || "").trim();
+  }
+
+  function getInjectedUser() {
+    const u = HB.currentUser || window.HB_USER || null;
+    if (!u) return null;
+    return {
+      wp_id: u.wp_user_id || u.id || u.user_id || null,
+      id: u.id || u.wp_user_id || u.user_id || null,
+      user_id: u.user_id || u.id || u.wp_user_id || null,
+      email: u.email || u.user_email || "",
+      name: u.displayName || u.display_name || u.name || "",
+      roles: Array.isArray(u.roles) ? u.roles : [],
+    };
+  }
+
+  function rolesList() {
+    const raw = (state.user && (state.user.roles || state.user.role)) || [];
+    return (Array.isArray(raw) ? raw : [raw]).map((x) => String(x || "").toLowerCase()).filter(Boolean);
+  }
+
+  function syncGroupRulesFromRoles() {
+    const roles = new Set(rolesList());
+    if (roles.has("administrator")) {
+      state.groupMaxMembers = 30;
+      state.groupInviteAny = true;
+      return;
+    }
+    if (roles.has("prof") || roles.has("teacher") || roles.has("instructor")) {
+      state.groupMaxMembers = 12;
+      state.groupInviteAny = true;
+      return;
+    }
+    state.groupMaxMembers = 5;
+    state.groupInviteAny = false;
+  }
+
+  function maxGroupInvites() {
+    return Math.max(1, Number(state.groupMaxMembers || 5) - 1);
+  }
+
+  function canInviteUserToGroup(wpUserId) {
+    const id = Number(wpUserId || 0);
+    if (!id || id === myWpId()) return false;
+    if (state.groupInviteAny) return true;
+    return friendSet().has(id);
+  }
+
+  function updateGroupUiHints() {
+    if (elGroupTitleLabel) {
+      elGroupTitleLabel.textContent = "Creer un groupe (max " + String(state.groupMaxMembers) + " personnes)";
+    }
+    if (elGroupRules) {
+      if (state.groupInviteAny) {
+        elGroupRules.textContent = "Le nom est obligatoire. En tant que prof/admin, tu peux inviter n'importe quel utilisateur.";
+      } else {
+        elGroupRules.textContent = "Le nom est obligatoire. En tant qu'eleve, tu peux inviter uniquement tes amis.";
+      }
+    }
+  }
+
+  function headers(withJson) {
+    const h = { Accept: "application/json" };
+    if (withJson) h["Content-Type"] = "application/json";
+
+    const t = token();
+    if (t) h["Authorization"] = "Bearer " + t;
+
+    if (state.user) {
+      const wpId = state.user.wp_id || state.user.id || state.user.user_id;
+      if (wpId != null) h["X-WP-User-Id"] = String(wpId);
+      if (state.user.email) h["X-User-Email"] = String(state.user.email);
+      const roles = rolesList();
+      if (roles.length) h["X-WP-User-Roles"] = roles.join(",");
+    }
+
+    return h;
+  }
+
+  function parseJsonSafe(txt) {
+    try { return txt ? JSON.parse(txt) : null; } catch (_e) { return null; }
+  }
+
+  function apiUrl(path) {
+    return API_BASE + (path.startsWith("/") ? path : "/" + path);
+  }
+
+  async function apiGet(path) {
+    const res = await fetch(apiUrl(path), {
+      method: "GET",
+      headers: headers(false),
+      credentials: "same-origin",
+    });
+    const txt = await res.text().catch(() => "");
+    const data = parseJsonSafe(txt);
+    debug("GET " + path, { status: res.status, body: data || txt });
+    if (!res.ok) {
+      const err = new Error((data && data.detail) ? data.detail : ("HTTP " + res.status));
+      err.status = res.status;
+      const ra = Number(res.headers.get("retry-after") || 0);
+      if (Number.isFinite(ra) && ra > 0) err.retryAfterSec = ra;
+      throw err;
+    }
+    return data;
+  }
+
+  async function apiPost(path, payload) {
+    const res = await fetch(apiUrl(path), {
+      method: "POST",
+      headers: headers(true),
+      credentials: "same-origin",
+      body: JSON.stringify(payload || {}),
+    });
+    const txt = await res.text().catch(() => "");
+    const data = parseJsonSafe(txt);
+    debug("POST " + path, { status: res.status, body: data || txt, payload: payload || {} });
+    if (!res.ok) {
+      const err = new Error((data && data.detail) ? data.detail : ("HTTP " + res.status));
+      err.status = res.status;
+      throw err;
+    }
+    return data;
+  }
+
+  async function apiDelete(path) {
+    const res = await fetch(apiUrl(path), {
+      method: "DELETE",
+      headers: headers(false),
+      credentials: "same-origin",
+    });
+    const txt = await res.text().catch(() => "");
+    const data = parseJsonSafe(txt);
+    debug("DELETE " + path, { status: res.status, body: data || txt });
+    if (!res.ok) {
+      const err = new Error((data && data.detail) ? data.detail : ("HTTP " + res.status));
+      err.status = res.status;
+      throw err;
+    }
+    return data;
+  }
+
+  function roomTypeLabel(v) {
+    const t = String(v || "").toLowerCase();
+    if (t === "private") return "Prive";
+    if (t === "group") return "Groupe";
+    if (t === "book") return "Livre";
+    return "Room";
+  }
+
+  function roleLabel(v) {
+    const t = String(v || "").toLowerCase();
+    if (t === "prof") return "Prof";
+    if (t === "student") return "Eleve";
+    if (t === "admin") return "Admin";
+    return "User";
+  }
+
+  function buildRoomUrl(roomId) {
+    const base = String(SALLE_URL || "/salle/").split("?")[0];
+    return base + "?room_id=" + encodeURIComponent(String(roomId));
+  }
+
+  function myWpId() {
+    return Number((state.user && (state.user.wp_id || state.user.id || state.user.user_id)) || 0);
+  }
+
+  function friendSet() {
+    return new Set((state.friends || []).map((x) => Number(x.wp_user_id || 0)).filter((x) => x > 0));
+  }
+
+  function incomingMap() {
+    const m = new Map();
+    for (const r of state.incomingRequests || []) {
+      const fromId = Number(r && r.from_user && r.from_user.wp_user_id || 0);
+      if (fromId > 0) m.set(fromId, r);
+    }
+    return m;
+  }
+
+  function outgoingMap() {
+    const m = new Map();
+    for (const r of state.outgoingRequests || []) {
+      const toId = Number(r && r.to_user && r.to_user.wp_user_id || 0);
+      if (toId > 0) m.set(toId, r);
+    }
+    return m;
+  }
+
+  function filteredRooms() {
+    const q = String(state.query || "").toLowerCase().trim();
+    return state.rooms.filter((room) => {
+      if (state.filter === "unread" && Number(room.unread_count || 0) <= 0) return false;
+      if (!q) return true;
+
+      const memberNames = Array.isArray(room.member_profiles)
+        ? room.member_profiles.map((x) => String((x && x.display_name) || "")).join(" ")
+        : "";
+      const hay = [
+        String(room.title || ""),
+        String(room.room_type || ""),
+        memberNames,
+        ...(Array.isArray(room.member_wp_user_ids) ? room.member_wp_user_ids.map(String) : []),
+      ].join(" ").toLowerCase();
+      return hay.includes(q);
+    });
+  }
+
+  function privateRoomDisplayTitle(room) {
+    const me = myWpId();
+    const profiles = Array.isArray(room.member_profiles) ? room.member_profiles : [];
+    const other = profiles.find((x) => Number(x.wp_user_id || 0) !== me);
+    if (other && other.display_name) return "Discussion avec " + other.display_name;
+    return room.title || ("Room #" + room.room_id);
+  }
+
+  function renderRooms() {
+    const list = filteredRooms();
+    if (elCount) elCount.textContent = String(list.length);
+    if (!list.length) {
+      elList.innerHTML = '<div class="hbm-empty">Aucune conversation a afficher.</div>';
+      return;
+    }
+
+    elList.innerHTML = list.map((room) => {
+      const unread = Number(room.unread_count || 0);
+      const members = Array.isArray(room.member_profiles) ? room.member_profiles : [];
+      const membersText = members.length
+        ? members.map((m) => m.display_name + (m.role_tag ? (" (" + roleLabel(m.role_tag) + ")") : "")).join(", ")
+        : (Array.isArray(room.member_wp_user_ids) ? room.member_wp_user_ids.join(", ") : "-");
+      const title = String(room.room_type || "") === "private" ? privateRoomDisplayTitle(room) : (room.title || ("Room #" + room.room_id));
+      const pendingInv = Number(room.pending_invites_count || 0);
+      return (
+        '<article class="hbm-room" data-room-id="' + esc(room.room_id) + '">' +
+          '<div class="hbm-room-top">' +
+            '<h3 class="hbm-room-title">' + esc(title) + '</h3>' +
+            '<span class="hbm-room-pill">' + esc(roomTypeLabel(room.room_type)) + '</span>' +
+          '</div>' +
+          '<p class="hbm-room-meta">Membres: ' + esc(membersText || "-") + '</p>' +
+          '<p class="hbm-room-meta">Non lus: <b style="color:' + (unread > 0 ? '#b45309' : '#0d8d61') + '">' + esc(unread) + '</b>' +
+          (pendingInv > 0 ? (' - Invites en attente: <b>' + esc(pendingInv) + '</b>') : '') +
+          '</p>' +
+          '<div class="hbm-room-actions">' +
+            '<a class="hbm-room-btn primary" href="' + esc(buildRoomUrl(room.room_id)) + '">Ouvrir la salle</a>' +
+          '</div>' +
+        '</article>'
+      );
+    }).join("");
+  }
+
+  function renderIncoming() {
+    const rows = state.incomingRequests || [];
+    if (!rows.length) {
+      elIncoming.innerHTML = '<div class="hbm-empty">Aucune demande.</div>';
+      return;
+    }
+    elIncoming.innerHTML = rows.map((r) => {
+      const u = r.from_user || {};
+      return (
+        '<article class="hbm-user" data-req-id="' + esc(r.id) + '">' +
+          '<div class="hbm-user-top">' +
+            '<h3 class="hbm-user-title">' + esc(u.display_name || ('User #' + (u.wp_user_id || ''))) + '</h3>' +
+            '<span class="hbm-role-pill">' + esc(roleLabel(u.role_tag)) + '</span>' +
+          '</div>' +
+          '<p class="hbm-user-meta">WP#' + esc(u.wp_user_id) + ' - Demande en attente</p>' +
+          '<div class="hbm-user-actions">' +
+            '<button class="hbm-user-btn primary" type="button" data-accept-friend="' + esc(r.id) + '">Accepter</button>' +
+            '<button class="hbm-user-btn" type="button" data-decline-friend="' + esc(r.id) + '">Refuser</button>' +
+          '</div>' +
+        '</article>'
+      );
+    }).join("");
+  }
+
+  function renderUserSearch() {
+    const list = (state.userSearchResults || []).filter((u) => Number(u.id || 0) !== myWpId());
+    if (!list.length) {
+      elUserResults.innerHTML = '<div class="hbm-empty">Aucun utilisateur.</div>';
+      return;
+    }
+
+    const friends = friendSet();
+    const incoming = incomingMap();
+    const outgoing = outgoingMap();
+
+    elUserResults.innerHTML = list.map((u) => {
+      const id = Number(u.id || 0);
+      const isFriend = friends.has(id);
+      const inReq = incoming.get(id);
+      const outReq = outgoing.get(id);
+      let actions = '';
+      if (isFriend) {
+        actions =
+          '<button class="hbm-user-btn primary" type="button" data-open-private="' + esc(id) + '">Message prive</button>' +
+          '<button class="hbm-user-btn" type="button" data-remove-friend="' + esc(id) + '">Retirer ami</button>';
+      } else if (inReq) {
+        actions =
+          '<button class="hbm-user-btn primary" type="button" data-accept-friend="' + esc(inReq.id) + '">Accepter</button>' +
+          '<button class="hbm-user-btn" type="button" data-decline-friend="' + esc(inReq.id) + '">Refuser</button>';
+      } else if (outReq) {
+        actions =
+          '<button class="hbm-user-btn" type="button" data-cancel-friend="' + esc(outReq.id) + '">Annuler demande</button>';
+      } else {
+        actions =
+          '<button class="hbm-user-btn primary" type="button" data-add-friend="' + esc(id) + '">Ajouter ami</button>';
+      }
+
+      if (canInviteUserToGroup(id)) {
+        actions +=
+          '<button class="hbm-user-btn" type="button" data-pick-group="' + esc(id) + '">Ajouter au groupe</button>';
+      } else {
+        actions +=
+          '<button class="hbm-user-btn" type="button" disabled title="Ajout groupe reserve aux amis pour eleve">Ami requis</button>';
+      }
+
+      return (
+        '<article class="hbm-user" data-user-id="' + esc(id) + '" data-user-name="' + esc(u.title || '') + '" data-user-role="' + esc(u.role_tag || '') + '" data-user-avatar="' + esc(u.avatar_url || '') + '">' +
+          '<div class="hbm-user-top">' +
+            '<h3 class="hbm-user-title">' + esc(u.title || ('User #' + id)) + '</h3>' +
+            '<span class="hbm-role-pill">' + esc(roleLabel(u.role_tag)) + '</span>' +
+          '</div>' +
+          '<p class="hbm-user-meta">WP#' + esc(id) + (u.subtitle ? (' - ' + esc(u.subtitle)) : '') + '</p>' +
+          '<div class="hbm-user-actions">' + actions + '</div>' +
+        '</article>'
+      );
+    }).join("");
+  }
+
+  function renderGroupPicks() {
+    const list = state.groupSelected || [];
+    if (!list.length) {
+      elGroupPicked.innerHTML = '<span class="hbm-pick-empty">Aucun membre selectionne.</span>';
+      return;
+    }
+    elGroupPicked.innerHTML = list.map((u) => (
+      '<span class="hbm-pick">' +
+        esc(u.display_name || ('User #' + u.wp_user_id)) +
+        ' (' + esc(roleLabel(u.role_tag)) + ')' +
+        '<button type="button" data-unpick-group="' + esc(u.wp_user_id) + '">x</button>' +
+      '</span>'
+    )).join('');
+  }
+
+  function renderGroupSearch() {
+    const list = (state.groupSearchResults || []).filter((u) => Number(u.id || 0) !== myWpId());
+    if (!list.length) {
+      elGroupResults.innerHTML = '<div class="hbm-empty">Aucun resultat.</div>';
+      return;
+    }
+
+    const selectedSet = new Set((state.groupSelected || []).map((x) => Number(x.wp_user_id || 0)));
+    elGroupResults.innerHTML = list.map((u) => {
+      const id = Number(u.id || 0);
+      const selected = selectedSet.has(id);
+      const eligible = canInviteUserToGroup(id);
+      return (
+        '<article class="hbm-user" data-user-id="' + esc(id) + '" data-user-name="' + esc(u.title || '') + '" data-user-role="' + esc(u.role_tag || '') + '" data-user-avatar="' + esc(u.avatar_url || '') + '">' +
+          '<div class="hbm-user-top">' +
+            '<h3 class="hbm-user-title">' + esc(u.title || ('User #' + id)) + '</h3>' +
+            '<span class="hbm-role-pill">' + esc(roleLabel(u.role_tag)) + '</span>' +
+          '</div>' +
+          '<p class="hbm-user-meta">WP#' + esc(id) + '</p>' +
+          '<div class="hbm-user-actions">' +
+            (selected
+              ? '<button class="hbm-user-btn" type="button" data-unpick-group="' + esc(id) + '">Retirer</button>'
+              : (eligible
+                  ? '<button class="hbm-user-btn primary" type="button" data-pick-group="' + esc(id) + '">Ajouter</button>'
+                  : '<button class="hbm-user-btn" type="button" disabled title="Ajout groupe reserve aux amis pour eleve">Ami requis</button>')) +
+          '</div>' +
+        '</article>'
+      );
+    }).join('');
+  }
+
+  function renderInvites() {
+    const rows = state.invites || [];
+    if (elInvCount) elInvCount.textContent = String(rows.length);
+    if (!rows.length) {
+      elInvitesList.innerHTML = '<div class="hbm-empty">Aucune invitation.</div>';
+      return;
+    }
+
+    elInvitesList.innerHTML = rows.map((r) => (
+      '<article class="hbm-invite" data-invite-id="' + esc(r.id) + '">' +
+        '<div class="hbm-invite-top">' +
+          '<h3 class="hbm-invite-title">' + esc(r.room_title || ('Room #' + r.room_id)) + '</h3>' +
+          '<span class="hbm-role-pill">Invite</span>' +
+        '</div>' +
+        '<p class="hbm-invite-meta">Par ' + esc(r.inviter_display_name || ('User #' + r.inviter_wp_user_id)) + '</p>' +
+        (r.message ? ('<p class="hbm-invite-meta">Message: ' + esc(r.message) + '</p>') : '') +
+        '<div class="hbm-invite-actions">' +
+          '<button class="hbm-invite-btn primary" type="button" data-accept-invite="' + esc(r.id) + '">Accepter</button>' +
+          '<button class="hbm-invite-btn" type="button" data-decline-invite="' + esc(r.id) + '">Refuser</button>' +
+        '</div>' +
+      '</article>'
+    )).join('');
+  }
+
+  async function loadRooms() {
+    if (state.loading) return;
+    if (!state.user) {
+      showAlert("Connecte-toi pour voir tes messages.");
+      return;
+    }
+    state.loading = true;
+    setState("Chargement...");
+    try {
+      const rows = await apiGet("/chats/rooms");
+      state.rooms = Array.isArray(rows) ? rows : [];
+      showAlert("");
+      renderRooms();
+      setState("Pret");
+      const hadBackoff = state.backoffMs > 0;
+      state.backoffMs = 0;
+      if (hadBackoff && state.timer) startPolling();
+    } catch (e) {
+      const msg = String(e && e.message ? e.message : e);
+      showAlert(msg);
+      setState("Erreur");
+      if (e && e.status === 429) {
+        if (e.retryAfterSec) {
+          state.backoffMs = Math.max(30000, e.retryAfterSec * 1000);
+        } else {
+          state.backoffMs = Math.max(30000, state.backoffMs ? Math.min(state.backoffMs * 2, 10 * 60 * 1000) : 60000);
+        }
+        if (state.timer) startPolling();
+      }
+      if (!state.rooms.length) elList.innerHTML = '<div class="hbm-empty">Impossible de charger les conversations.</div>';
+    } finally {
+      state.loading = false;
+    }
+  }
+
+  async function loadSocial() {
+    const [friends, incoming, outgoing, invites] = await Promise.all([
+      apiGet("/friends").catch(() => []),
+      apiGet("/friends/requests/incoming").catch(() => []),
+      apiGet("/friends/requests/outgoing").catch(() => []),
+      apiGet("/chats/invites?status=pending&limit=40").catch(() => []),
+    ]);
+    state.friends = Array.isArray(friends) ? friends : [];
+    state.incomingRequests = Array.isArray(incoming) ? incoming : [];
+    state.outgoingRequests = Array.isArray(outgoing) ? outgoing : [];
+    state.invites = Array.isArray(invites) ? invites : [];
+    renderIncoming();
+    renderInvites();
+    renderUserSearch();
+    renderGroupSearch();
+    renderGroupPicks();
+  }
+
+  async function searchUsers(query, target) {
+    const q = String(query || "").trim();
+    if (!q || q.length < 2) {
+      if (target === "user") {
+        state.userSearchResults = [];
+        renderUserSearch();
+      } else {
+        state.groupSearchResults = [];
+        renderGroupSearch();
+      }
+      return;
+    }
+    try {
+      const result = await apiGet("/search?q=" + encodeURIComponent(q) + "&types=users&limit=20");
+      const items = Array.isArray(result && result.items) ? result.items : [];
+      const users = items.filter((x) => String(x.type) === "user");
+      if (target === "user") {
+        state.userSearchResults = users;
+        renderUserSearch();
+      } else {
+        state.groupSearchResults = users;
+        renderGroupSearch();
+      }
+    } catch (e) {
+      showAlert(String(e && e.message ? e.message : e));
+    }
+  }
+
+  function pickGroupUserFromElement(el) {
+    if (!el) return;
+    const wpId = Number(el.getAttribute("data-user-id") || 0);
+    if (!wpId || wpId === myWpId()) return;
+    if (!canInviteUserToGroup(wpId)) {
+      elGroupFeedback.textContent = "Ajout non autorise pour cet utilisateur.";
+      return;
+    }
+    if ((state.groupSelected || []).some((x) => Number(x.wp_user_id) === wpId)) return;
+    if ((state.groupSelected || []).length >= maxGroupInvites()) {
+      elGroupFeedback.textContent = "Maximum " + String(maxGroupInvites()) + " invites (" + String(state.groupMaxMembers) + " personnes avec toi).";
+      return;
+    }
+    state.groupSelected.push({
+      wp_user_id: wpId,
+      display_name: el.getAttribute("data-user-name") || ("User #" + wpId),
+      role_tag: el.getAttribute("data-user-role") || null,
+      avatar_url: el.getAttribute("data-user-avatar") || null,
+    });
+    elGroupFeedback.textContent = "";
+    renderGroupPicks();
+    renderGroupSearch();
+    renderUserSearch();
+  }
+
+  function unpickGroupUser(wpId) {
+    state.groupSelected = (state.groupSelected || []).filter((x) => Number(x.wp_user_id) !== Number(wpId));
+    renderGroupPicks();
+    renderGroupSearch();
+    renderUserSearch();
+  }
+
+  async function createPrivateRoom(peerWpUserId) {
+    const peer = Number(peerWpUserId || 0);
+    if (!peer) return;
+    try {
+      const room = await apiPost("/chats/rooms/private/ensure", {
+        peer_wp_user_id: peer,
+        title: null,
+      });
+      window.location.href = buildRoomUrl(room.room_id);
+    } catch (e) {
+      showAlert(String(e && e.message ? e.message : e));
+    }
+  }
+
+  async function addFriend(toWpUserId) {
+    const target = Number(toWpUserId || 0);
+    if (!target) return;
+    try {
+      await apiPost("/friends/requests", { to_wp_user_id: target });
+      await loadSocial();
+    } catch (e) {
+      showAlert(String(e && e.message ? e.message : e));
+    }
+  }
+
+  async function acceptFriend(requestId) {
+    try {
+      await apiPost("/friends/requests/" + encodeURIComponent(requestId) + "/accept", {});
+      await loadSocial();
+    } catch (e) {
+      showAlert(String(e && e.message ? e.message : e));
+    }
+  }
+
+  async function declineFriend(requestId) {
+    try {
+      await apiPost("/friends/requests/" + encodeURIComponent(requestId) + "/decline", {});
+      await loadSocial();
+    } catch (e) {
+      showAlert(String(e && e.message ? e.message : e));
+    }
+  }
+
+  async function cancelFriend(requestId) {
+    try {
+      await apiPost("/friends/requests/" + encodeURIComponent(requestId) + "/cancel", {});
+      await loadSocial();
+    } catch (e) {
+      showAlert(String(e && e.message ? e.message : e));
+    }
+  }
+
+  async function removeFriend(wpUserId) {
+    try {
+      await apiDelete("/friends/" + encodeURIComponent(wpUserId));
+      await loadSocial();
+    } catch (e) {
+      showAlert(String(e && e.message ? e.message : e));
+    }
+  }
+
+  async function createGroup() {
+    const title = String((elGroupTitle && elGroupTitle.value) || "").trim();
+    const memberIds = (state.groupSelected || []).map((x) => Number(x.wp_user_id || 0)).filter((x) => x > 0);
+    if (!title) {
+      elGroupFeedback.textContent = "Nom du groupe requis.";
+      return;
+    }
+    if (!memberIds.length) {
+      elGroupFeedback.textContent = "Ajoute au moins 1 invite.";
+      return;
+    }
+    if ((memberIds.length + 1) > Number(state.groupMaxMembers || 5)) {
+      elGroupFeedback.textContent = "Taille max atteinte: " + String(state.groupMaxMembers) + " personnes.";
+      return;
+    }
+
+    elGroupFeedback.textContent = "Creation...";
+    elGroupCreate.disabled = true;
+    try {
+      const room = await apiPost("/chats/rooms", {
+        room_type: "group",
+        title: title,
+        member_wp_user_ids: memberIds,
+      });
+      state.groupSelected = [];
+      renderGroupPicks();
+      elGroupFeedback.textContent = "Groupe cree. Redirection...";
+      window.location.href = buildRoomUrl(room.room_id);
+    } catch (e) {
+      elGroupFeedback.textContent = String(e && e.message ? e.message : e);
+    } finally {
+      elGroupCreate.disabled = false;
+    }
+  }
+
+  async function acceptInvite(inviteId) {
+    try {
+      const room = await apiPost("/chats/invites/" + encodeURIComponent(inviteId) + "/accept", {});
+      await loadSocial();
+      await loadRooms();
+      window.location.href = buildRoomUrl(room.room_id);
+    } catch (e) {
+      showAlert(String(e && e.message ? e.message : e));
+    }
+  }
+
+  async function declineInvite(inviteId) {
+    try {
+      await apiPost("/chats/invites/" + encodeURIComponent(inviteId) + "/decline", {});
+      await loadSocial();
+      await loadRooms();
+    } catch (e) {
+      showAlert(String(e && e.message ? e.message : e));
+    }
+  }
+
+  function applyTabUI() {
+    tabButtons.forEach((btn) => {
+      const active = btn.getAttribute("data-filter") === state.filter;
+      btn.classList.toggle("is-active", active);
+    });
+  }
+
+  function bindEvents() {
+    elRefresh.addEventListener("click", async () => {
+      await loadSocial();
+      await loadRooms();
+    });
+
+    elSearch.addEventListener("input", () => {
+      state.query = elSearch.value || "";
+      renderRooms();
+    });
+
+    tabButtons.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        state.filter = btn.getAttribute("data-filter") || "all";
+        applyTabUI();
+        renderRooms();
+      });
+    });
+
+    elUserSearch.addEventListener("input", () => {
+      clearTimeout(elUserSearch._t);
+      elUserSearch._t = setTimeout(() => searchUsers(elUserSearch.value || "", "user"), 220);
+    });
+
+    elGroupSearch.addEventListener("input", () => {
+      clearTimeout(elGroupSearch._t);
+      elGroupSearch._t = setTimeout(() => searchUsers(elGroupSearch.value || "", "group"), 220);
+    });
+
+    elGroupCreate.addEventListener("click", createGroup);
+
+    root.addEventListener("click", (ev) => {
+      const addFriendBtn = ev.target.closest("[data-add-friend]");
+      if (addFriendBtn) return addFriend(addFriendBtn.getAttribute("data-add-friend"));
+
+      const removeFriendBtn = ev.target.closest("[data-remove-friend]");
+      if (removeFriendBtn) return removeFriend(removeFriendBtn.getAttribute("data-remove-friend"));
+
+      const acceptFriendBtn = ev.target.closest("[data-accept-friend]");
+      if (acceptFriendBtn) return acceptFriend(acceptFriendBtn.getAttribute("data-accept-friend"));
+
+      const declineFriendBtn = ev.target.closest("[data-decline-friend]");
+      if (declineFriendBtn) return declineFriend(declineFriendBtn.getAttribute("data-decline-friend"));
+
+      const cancelFriendBtn = ev.target.closest("[data-cancel-friend]");
+      if (cancelFriendBtn) return cancelFriend(cancelFriendBtn.getAttribute("data-cancel-friend"));
+
+      const openPrivateBtn = ev.target.closest("[data-open-private]");
+      if (openPrivateBtn) return createPrivateRoom(openPrivateBtn.getAttribute("data-open-private"));
+
+      const pickBtn = ev.target.closest("[data-pick-group]");
+      if (pickBtn) return pickGroupUserFromElement(pickBtn.closest("[data-user-id]"));
+
+      const unpickBtn = ev.target.closest("[data-unpick-group]");
+      if (unpickBtn) return unpickGroupUser(unpickBtn.getAttribute("data-unpick-group"));
+
+      const acceptInvBtn = ev.target.closest("[data-accept-invite]");
+      if (acceptInvBtn) return acceptInvite(acceptInvBtn.getAttribute("data-accept-invite"));
+
+      const declineInvBtn = ev.target.closest("[data-decline-invite]");
+      if (declineInvBtn) return declineInvite(declineInvBtn.getAttribute("data-decline-invite"));
+    });
+
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden) {
+        loadSocial();
+        loadRooms();
+      }
+    });
+
+    window.addEventListener("beforeunload", () => {
+      if (state.timer) clearInterval(state.timer);
+    });
+  }
+
+  function startPolling() {
+    if (state.timer) clearInterval(state.timer);
+    state.timer = setInterval(async () => {
+      if (document.hidden) return;
+      await loadSocial();
+      await loadRooms();
+    }, state.backoffMs || LOAD_INTERVAL);
+  }
+
+  async function boot() {
+    state.user = getInjectedUser();
+    if (!state.user) {
+      showAlert("HB_CONFIG/HB_USER introuvable. Verifie le snippet d'injection.");
+      elList.innerHTML = '<div class="hbm-empty">Utilisateur non detecte.</div>';
+      setState("Non connecte");
+      return;
+    }
+
+    syncGroupRulesFromRoles();
+    updateGroupUiHints();
+    applyTabUI();
+    bindEvents();
+    await loadSocial();
+    await loadRooms();
+    startPolling();
+  }
+
+  boot();
+})();
+</script>

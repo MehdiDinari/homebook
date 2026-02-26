@@ -1,0 +1,479 @@
+<div id="hb-live-call" class="hblc" data-api-base="" data-fallback-provider="jitsi">
+  <header class="hblc-top">
+    <div class="hblc-head">
+      <h1>Live Room</h1>
+      <p id="hblc-sub">Session live en direct. Acces selon abonnement eleve.</p>
+    </div>
+    <div class="hblc-actions">
+      <button id="hblc-join" class="hblc-btn hblc-btn-primary" type="button">Rejoindre</button>
+      <button id="hblc-leave" class="hblc-btn" type="button">Quitter</button>
+      <button id="hblc-open" class="hblc-btn" type="button">Ouvrir dans un onglet</button>
+      <button id="hblc-refresh" class="hblc-btn" type="button">Refresh</button>
+    </div>
+  </header>
+
+  <div id="hblc-alert" class="hblc-alert" style="display:none"></div>
+
+  <section class="hblc-grid">
+    <article class="hblc-stage-card">
+      <div class="hblc-stage-head">
+        <div class="hblc-badges">
+          <span class="hblc-badge">Session <b id="hblc-session-id">-</b></span>
+          <span class="hblc-badge">Status <b id="hblc-status">-</b></span>
+          <span class="hblc-badge">RT <b id="hblc-rt">off</b></span>
+          <span class="hblc-badge">Online <b id="hblc-online">0</b></span>
+        </div>
+      </div>
+
+      <div id="hblc-stage" class="hblc-stage">
+        <div id="hblc-placeholder" class="hblc-placeholder">
+          <h3>Pret pour le live</h3>
+          <p>Clique sur <b>Rejoindre</b> pour entrer dans l'appel.</p>
+        </div>
+        <iframe id="hblc-iframe" title="Live room" allow="camera; microphone; fullscreen; autoplay; display-capture" referrerpolicy="no-referrer" style="display:none"></iframe>
+      </div>
+    </article>
+
+    <aside class="hblc-side">
+      <article class="hblc-card">
+        <h2>Details</h2>
+        <div class="hblc-kv"><span>Titre</span><b id="hblc-title">-</b></div>
+        <div class="hblc-kv"><span>Type</span><b id="hblc-kind">-</b></div>
+        <div class="hblc-kv"><span>Debut</span><b id="hblc-start">-</b></div>
+        <div class="hblc-kv"><span>Duree</span><b id="hblc-duration">-</b></div>
+        <div class="hblc-kv"><span>Prof</span><b id="hblc-teacher">-</b></div>
+        <div class="hblc-kv"><span>URL appel</span><b id="hblc-url">-</b></div>
+      </article>
+
+      <article class="hblc-card">
+        <h2>Participants en ligne</h2>
+        <div id="hblc-users" class="hblc-users">
+          <div class="hblc-empty">Aucun participant.</div>
+        </div>
+      </article>
+    </aside>
+  </section>
+</div>
+
+<style>
+#hb-live-call.hblc{
+  --bg:#f4f8ff;
+  --card:#fff;
+  --ink:#10243d;
+  --muted:#5c6d82;
+  --line:#d8e4f4;
+  --navy:#0f3d69;
+  --navy2:#1f5f96;
+  --ok:#11835c;
+  --danger:#b42318;
+  width:100%;
+  max-width:none;
+  margin:0;
+  padding:16px;
+  border:1px solid var(--line);
+  border-radius:18px;
+  background:
+    radial-gradient(900px 340px at -10% -30%, rgba(31,95,150,.18), transparent 62%),
+    radial-gradient(880px 330px at 110% -25%, rgba(15,61,105,.14), transparent 62%),
+    var(--bg);
+  box-shadow:0 18px 52px rgba(9,28,49,.10);
+  color:var(--ink);
+  font-family:"DM Sans","Segoe UI",system-ui,sans-serif;
+}
+#hb-live-call *{box-sizing:border-box;}
+#hb-live-call .hblc-top{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:flex-start;}
+#hb-live-call h1{margin:0;font-size:30px;line-height:1.05;color:var(--navy);letter-spacing:-.02em;}
+#hb-live-call #hblc-sub{margin:8px 0 0;color:var(--muted);font-size:13px;}
+#hb-live-call .hblc-actions{display:flex;gap:8px;flex-wrap:wrap;}
+#hb-live-call .hblc-btn{border:1px solid #c9d9ef;background:#f1f7ff;color:var(--navy);font-weight:800;border-radius:12px;padding:10px 12px;cursor:pointer;}
+#hb-live-call .hblc-btn-primary{background:linear-gradient(180deg,var(--navy2),var(--navy));color:#fff;border-color:rgba(15,61,105,.4);}
+#hb-live-call .hblc-btn:disabled{opacity:.5;cursor:not-allowed;}
+#hb-live-call .hblc-alert{margin-top:10px;border:1px solid #f2bbbb;background:#fff2f2;color:#7f1d1d;border-radius:12px;padding:10px;font-size:13px;}
+#hb-live-call .hblc-grid{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:12px;margin-top:12px;align-items:start;}
+#hb-live-call .hblc-stage-card{border:1px solid var(--line);background:var(--card);border-radius:16px;overflow:hidden;box-shadow:0 10px 28px rgba(9,28,49,.08);}
+#hb-live-call .hblc-stage-head{padding:10px 12px;border-bottom:1px solid var(--line);background:linear-gradient(180deg,#fff,#f9fbff);}
+#hb-live-call .hblc-badges{display:flex;gap:8px;flex-wrap:wrap;}
+#hb-live-call .hblc-badge{display:inline-flex;gap:6px;align-items:center;font-size:12px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:6px 10px;background:#fff;}
+#hb-live-call .hblc-stage{position:relative;width:100%;aspect-ratio:16/9;background:#0b1220;}
+#hb-live-call .hblc-stage iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#0b1220;}
+#hb-live-call .hblc-placeholder{position:absolute;inset:0;display:grid;place-content:center;text-align:center;color:#d8e7ff;padding:24px;}
+#hb-live-call .hblc-placeholder h3{margin:0 0 8px;font-size:24px;color:#eaf2ff;}
+#hb-live-call .hblc-placeholder p{margin:0;font-size:14px;color:#c6d6ee;}
+#hb-live-call .hblc-side{display:grid;gap:12px;}
+#hb-live-call .hblc-card{border:1px solid var(--line);background:var(--card);border-radius:16px;padding:12px;box-shadow:0 10px 26px rgba(9,28,49,.07);}
+#hb-live-call .hblc-card h2{margin:0 0 8px;color:var(--navy);font-size:15px;}
+#hb-live-call .hblc-kv{display:flex;justify-content:space-between;gap:8px;padding:7px 0;border-bottom:1px dashed #d7e3f4;font-size:12px;}
+#hb-live-call .hblc-kv:last-child{border-bottom:0;}
+#hb-live-call .hblc-kv span{color:var(--muted);font-weight:700;}
+#hb-live-call .hblc-kv b{text-align:right;word-break:break-word;}
+#hb-live-call .hblc-users{display:flex;flex-direction:column;gap:8px;max-height:360px;overflow:auto;}
+#hb-live-call .hblc-user{border:1px solid #d4e1f3;border-radius:10px;background:#f8fbff;padding:8px;display:flex;gap:8px;align-items:center;}
+#hb-live-call .hblc-avatar{width:30px;height:30px;border-radius:999px;background:#e5effd;border:1px solid #c7d7ef;overflow:hidden;display:grid;place-items:center;font-size:10px;font-weight:900;color:#1b4f7d;}
+#hb-live-call .hblc-avatar img{width:100%;height:100%;object-fit:cover;display:block;}
+#hb-live-call .hblc-meta{display:grid;gap:2px;min-width:0;}
+#hb-live-call .hblc-meta b{font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+#hb-live-call .hblc-meta small{font-size:11px;color:var(--muted);}
+#hb-live-call .hblc-empty{border:1px dashed #d5e1f3;border-radius:10px;background:#fff;padding:9px;color:var(--muted);font-size:12px;}
+@media (max-width:1080px){#hb-live-call .hblc-grid{grid-template-columns:1fr;}}
+</style>
+
+<script>
+(() => {
+  if (window.__HB_LIVE_CALL_INIT__) return;
+  window.__HB_LIVE_CALL_INIT__ = true;
+
+  const root = document.getElementById('hb-live-call');
+  if (!root) return;
+
+  const HB = window.HB_CONFIG || {};
+  const qs = new URLSearchParams(window.location.search || '');
+  const sessionId = Number(qs.get('session_id') || '0');
+
+  const el = {
+    alert: document.getElementById('hblc-alert'),
+    join: document.getElementById('hblc-join'),
+    leave: document.getElementById('hblc-leave'),
+    open: document.getElementById('hblc-open'),
+    refresh: document.getElementById('hblc-refresh'),
+    iframe: document.getElementById('hblc-iframe'),
+    placeholder: document.getElementById('hblc-placeholder'),
+    status: document.getElementById('hblc-status'),
+    rt: document.getElementById('hblc-rt'),
+    sid: document.getElementById('hblc-session-id'),
+    title: document.getElementById('hblc-title'),
+    kind: document.getElementById('hblc-kind'),
+    start: document.getElementById('hblc-start'),
+    duration: document.getElementById('hblc-duration'),
+    teacher: document.getElementById('hblc-teacher'),
+    url: document.getElementById('hblc-url'),
+    online: document.getElementById('hblc-online'),
+    users: document.getElementById('hblc-users')
+  };
+
+  const state = {
+    user: null,
+    token: String(HB.token || '').trim(),
+    session: null,
+    callUrl: '',
+    ws: null,
+    wsPing: null,
+    wsRetryMs: 1500
+  };
+
+  function normalizeBase(v){ return String(v || '').trim().replace(/\/+$/, ''); }
+  function normalizeApiBase(raw){
+    const b = normalizeBase(raw);
+    if (!b) return '/api/v1';
+    if (/\/api\/v1$/i.test(b)) return b;
+    if (/\/api$/i.test(b)) return b + '/v1';
+    if (/^https?:\/\//i.test(b) || b.startsWith('/')) return b + '/api/v1';
+    return '/api/v1';
+  }
+  function wsBaseFromApi(apiBase){
+    const direct = normalizeBase((HB && HB.wsBase) || '');
+    if (direct) return direct;
+    const raw = normalizeBase(apiBase);
+    const proxy = '/wp-json/homebook/v1/proxy/api/v1';
+    if (raw.endsWith(proxy)) return raw.slice(0, -proxy.length) + '/ws';
+    if (/\/api\/v1$/i.test(raw)) return raw.replace(/\/api\/v1$/i, '/ws');
+    return '/ws';
+  }
+  function toWs(u){
+    const s = String(u || '');
+    if (s.startsWith('ws://') || s.startsWith('wss://')) return s;
+    if (s.startsWith('https://')) return 'wss://' + s.slice(8);
+    if (s.startsWith('http://')) return 'ws://' + s.slice(7);
+    const proto = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
+    if (s.startsWith('/')) return proto + window.location.host + s;
+    return proto + s;
+  }
+
+  const API_BASE = normalizeApiBase(HB.apiBase || root.getAttribute('data-api-base') || '');
+  const WS_BASE = wsBaseFromApi(API_BASE);
+
+  function setAlert(msg){
+    if (!el.alert) return;
+    if (!msg){ el.alert.style.display='none'; el.alert.textContent=''; return; }
+    el.alert.style.display='block';
+    el.alert.textContent = msg;
+  }
+
+  function setRt(on){
+    if (!el.rt) return;
+    el.rt.textContent = on ? 'on' : 'off';
+    el.rt.style.color = on ? '#11835c' : '#5c6d82';
+  }
+
+  function fmtDate(v){
+    if (!v) return '-';
+    const d = new Date(v);
+    if (String(d) === 'Invalid Date') return String(v);
+    return d.toLocaleString('fr-FR', {year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
+  }
+
+  function esc(s){
+    return String(s == null ? '' : s)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+  }
+
+  function initials(name){
+    const p = String(name || '').trim().split(/\s+/).filter(Boolean);
+    if (!p.length) return 'HB';
+    if (p.length === 1) return p[0].slice(0,2).toUpperCase();
+    return (p[0][0] + p[1][0]).toUpperCase();
+  }
+
+  function parseJson(txt){
+    try { return txt ? JSON.parse(txt) : null; } catch(_e){ return null; }
+  }
+
+  function me(){
+    const u = HB.currentUser || window.HB_USER || null;
+    if (!u) return null;
+    return {
+      wp_id: u.wp_user_id || u.id || u.user_id || null,
+      email: u.email || u.user_email || '',
+      roles: Array.isArray(u.roles) ? u.roles : (u.roles ? [u.roles] : [])
+    };
+  }
+
+  function headers(withJson){
+    const h = { Accept: 'application/json' };
+    if (withJson) h['Content-Type'] = 'application/json';
+    if (state.token){
+      h['Authorization'] = 'Bearer ' + state.token;
+      h['X-HB-Token'] = state.token;
+    }
+    if (state.user){
+      if (state.user.wp_id != null) h['X-WP-User-Id'] = String(state.user.wp_id);
+      if (state.user.email) h['X-User-Email'] = state.user.email;
+      if (state.user.roles && state.user.roles.length) h['X-WP-User-Roles'] = state.user.roles.join(',');
+    }
+    return h;
+  }
+
+  async function api(method, path, body, attempt){
+    const n = Number(attempt || 0);
+    const res = await fetch(API_BASE + path, {
+      method,
+      headers: headers(!!body),
+      credentials: 'same-origin',
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    const txt = await res.text().catch(() => '');
+    const data = parseJson(txt);
+
+    if (res.status === 429 && n < 3){
+      await new Promise(r => setTimeout(r, 700 * Math.pow(2, n)));
+      return api(method, path, body, n + 1);
+    }
+
+    if (!res.ok){
+      const e = new Error((data && data.detail) ? data.detail : ('HTTP ' + res.status));
+      e.status = res.status;
+      throw e;
+    }
+    return data;
+  }
+
+  function fallbackCallUrl(){
+    return 'https://meet.jit.si/homebook-live-' + encodeURIComponent(String(sessionId));
+  }
+
+  function resolveCallUrl(raw){
+    const url = String(raw || '').trim();
+    if (!url) return fallbackCallUrl();
+    try {
+      const u = new URL(url, window.location.origin);
+      const isSelfLive = u.origin === window.location.origin && /\/(live|live-room|course|course-room)\/?/i.test(u.pathname || '');
+      if (isSelfLive) return fallbackCallUrl();
+      return u.toString();
+    } catch(_e){
+      return fallbackCallUrl();
+    }
+  }
+
+  function renderSession(){
+    const s = state.session;
+    if (!s) return;
+    if (el.sid) el.sid.textContent = String(s.id || sessionId || '-');
+    if (el.status) el.status.textContent = s.status || '-';
+    if (el.title) el.title.textContent = s.title || '-';
+    if (el.kind) el.kind.textContent = s.kind || '-';
+    if (el.start) el.start.textContent = fmtDate(s.starts_at);
+    if (el.duration) el.duration.textContent = String(s.duration_minutes || '-') + ' min';
+    if (el.teacher) el.teacher.textContent = s.teacher_wp_id != null ? ('#' + s.teacher_wp_id) : '-';
+    if (el.url) el.url.textContent = state.callUrl || '-';
+  }
+
+  function renderUsers(list){
+    const rows = Array.isArray(list) ? list : [];
+    if (el.online) el.online.textContent = String(rows.length);
+    if (!el.users) return;
+    if (!rows.length){
+      el.users.innerHTML = '<div class="hblc-empty">Aucun participant.</div>';
+      return;
+    }
+    el.users.innerHTML = rows.map((u) => (
+      '<article class="hblc-user">' +
+        '<div class="hblc-avatar">' + (u.avatar_url ? ('<img src="'+esc(u.avatar_url)+'" alt="">') : esc(initials(u.display_name))) + '</div>' +
+        '<div class="hblc-meta">' +
+          '<b>' + esc(u.display_name || ('WP#'+(u.wp_user_id || ''))) + '</b>' +
+          '<small>@' + esc(u.role_tag || 'member') + ' • ' + esc(fmtDate(u.last_event_at)) + '</small>' +
+        '</div>' +
+      '</article>'
+    )).join('');
+  }
+
+  async function loadCore(){
+    const s = await api('GET', '/sessions/' + encodeURIComponent(String(sessionId)));
+    const a = await api('GET', '/sessions/' + encodeURIComponent(String(sessionId)) + '/access');
+    state.session = s || null;
+    state.callUrl = resolveCallUrl((a && a.access_url) || (s && s.access_url) || '');
+    renderSession();
+  }
+
+  async function loadPresence(){
+    const p = await api('GET', '/sessions/' + encodeURIComponent(String(sessionId)) + '/presence/online');
+    renderUsers((p && p.users) ? p.users : []);
+  }
+
+  async function sendPresence(eventName){
+    if (!eventName) return;
+    try { await api('POST', '/sessions/' + encodeURIComponent(String(sessionId)) + '/presence', { event: eventName }); }
+    catch(_e){}
+  }
+
+  function showCall(){
+    if (!state.callUrl){ setAlert('URL appel indisponible'); return; }
+    if (el.iframe){
+      el.iframe.src = state.callUrl;
+      el.iframe.style.display = 'block';
+    }
+    if (el.placeholder) el.placeholder.style.display = 'none';
+  }
+
+  function hideCall(){
+    if (el.iframe){
+      el.iframe.src = 'about:blank';
+      el.iframe.style.display = 'none';
+    }
+    if (el.placeholder) el.placeholder.style.display = 'grid';
+  }
+
+  function closeWs(){
+    if (state.wsPing){ clearInterval(state.wsPing); state.wsPing = null; }
+    if (state.ws){ try{ state.ws.close(); }catch(_e){} state.ws = null; }
+    setRt(false);
+  }
+
+  function connectWs(){
+    closeWs();
+    if (!state.token || sessionId <= 0) return;
+    const url = toWs(WS_BASE) + '/sessions/' + encodeURIComponent(String(sessionId)) + '?token=' + encodeURIComponent(state.token);
+    const ws = new WebSocket(url);
+    state.ws = ws;
+
+    ws.onopen = () => {
+      state.wsRetryMs = 1500;
+      setRt(true);
+      state.wsPing = setInterval(() => { try { ws.send('ping'); } catch(_e){} }, 15000);
+    };
+
+    ws.onmessage = (ev) => {
+      let d = null;
+      try { d = JSON.parse(ev.data); } catch(_e){}
+      if (!d || typeof d !== 'object') return;
+      if (d.type === 'pong' || d.type === 'session.ws.ready') return;
+      if (String(d.type || '').startsWith('session.')){
+        loadCore().catch(() => {});
+        loadPresence().catch(() => {});
+      }
+    };
+
+    ws.onclose = () => {
+      setRt(false);
+      if (state.wsPing){ clearInterval(state.wsPing); state.wsPing = null; }
+      state.ws = null;
+      const wait = Math.min(12000, state.wsRetryMs);
+      state.wsRetryMs = Math.min(12000, Math.round(state.wsRetryMs * 1.8));
+      setTimeout(connectWs, wait);
+    };
+
+    ws.onerror = () => {};
+  }
+
+  async function boot(){
+    state.user = me();
+    if (!sessionId || sessionId <= 0){
+      setAlert('Ajoute ?session_id=<id> dans l URL');
+      return;
+    }
+
+    try {
+      setAlert('');
+      await loadCore();
+      await loadPresence();
+      connectWs();
+    } catch(err){
+      setAlert(String(err && err.message ? err.message : err));
+    }
+  }
+
+  if (el.join) el.join.addEventListener('click', async () => {
+    el.join.disabled = true;
+    try {
+      await api('POST', '/sessions/' + encodeURIComponent(String(sessionId)) + '/join');
+      await sendPresence('joined');
+      showCall();
+      await loadPresence();
+    } catch(err){
+      setAlert(String(err && err.message ? err.message : err));
+    } finally {
+      el.join.disabled = false;
+    }
+  });
+
+  if (el.leave) el.leave.addEventListener('click', async () => {
+    hideCall();
+    await sendPresence('left');
+    await loadPresence().catch(() => {});
+  });
+
+  if (el.open) el.open.addEventListener('click', () => {
+    if (!state.callUrl) return;
+    window.open(state.callUrl, '_blank', 'noopener');
+  });
+
+  if (el.refresh) el.refresh.addEventListener('click', async () => {
+    try {
+      await loadCore();
+      await loadPresence();
+    } catch(err){
+      setAlert(String(err && err.message ? err.message : err));
+    }
+  });
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      loadPresence().catch(() => {});
+    }
+  });
+
+  window.addEventListener('beforeunload', () => {
+    try {
+      const body = JSON.stringify({ event: 'left' });
+      fetch(API_BASE + '/sessions/' + encodeURIComponent(String(sessionId)) + '/presence', {
+        method: 'POST',
+        headers: headers(true),
+        body,
+        credentials: 'same-origin',
+        keepalive: true,
+      });
+    } catch(_e){}
+  });
+
+  boot();
+})();
+</script>

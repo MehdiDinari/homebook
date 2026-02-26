@@ -1,0 +1,1154 @@
+<div id="hb-feed-page" class="hbf" data-api-base="" data-wp-base="" data-create-url="/posts-actualites/createpost/" data-load-limit="20">
+  <header class="hbf-hero">
+    <div>
+      <h1>Posts & Actualites</h1>
+      <p class="hbf-muted">Le feed de ta communaute HomeBook: reactions, commentaires et signalements.</p>
+      <div class="hbf-chips">
+        <span class="hbf-chip">API: <b id="hbf-api">-</b></span>
+        <span class="hbf-chip">Posts charges: <b id="hbf-count">0</b></span>
+        <span class="hbf-chip" id="hbf-state-chip">Etat: <b id="hbf-state">Pret</b></span>
+      </div>
+    </div>
+
+    <div class="hbf-actions">
+      <a id="hbf-create-link" class="hbf-btn hbf-btn-primary" href="/posts-actualites/createpost/">Creer un post</a>
+      <button id="hbf-refresh" class="hbf-btn" type="button">Actualiser</button>
+    </div>
+  </header>
+
+  <section class="hbf-toolbar">
+    <input id="hbf-search" class="hbf-input" type="search" placeholder="Rechercher dans le feed (texte, hashtag, auteur)..." />
+    <button id="hbf-clear" class="hbf-btn hbf-btn-ghost" type="button">Effacer</button>
+  </section>
+
+  <div id="hbf-alert" class="hbf-alert" style="display:none"></div>
+
+  <section id="hbf-list" class="hbf-list">
+    <div class="hbf-empty">Chargement du feed...</div>
+  </section>
+
+  <div class="hbf-load-wrap">
+    <button id="hbf-load-more" class="hbf-btn" type="button">Voir plus</button>
+  </div>
+
+  <div id="hbf-toast" class="hbf-toast" aria-live="polite"></div>
+  <pre id="hbf-debug" class="hbf-debug" style="display:none"></pre>
+</div>
+
+<style>
+  #hb-feed-page.hbf {
+    --bg: #f5f8fc;
+    --card: #ffffff;
+    --text: #0f1b2d;
+    --muted: #5c6b80;
+    --stroke: #d8e2ee;
+    --navy: #0e3a5d;
+    --navy-2: #174e7d;
+    --pill: #eef4fb;
+    --danger: #dc2626;
+    --ok: #15803d;
+    --radius: 18px;
+
+    font-family: "DM Sans", "Poppins", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    color: var(--text);
+    background:
+      radial-gradient(1000px 380px at -8% -26%, rgba(23, 78, 125, 0.10), transparent 60%),
+      radial-gradient(920px 420px at 108% -24%, rgba(14, 58, 93, 0.10), transparent 62%),
+      var(--bg);
+    border: 1px solid var(--stroke);
+    border-radius: 24px;
+    padding: 22px;
+    box-shadow: 0 24px 64px rgba(8, 23, 44, 0.10);
+  }
+
+  #hb-feed-page * {
+    box-sizing: border-box;
+  }
+
+  #hb-feed-page .hbf-hero {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 14px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+  }
+
+  #hb-feed-page h1 {
+    margin: 0;
+    font-size: 34px;
+    letter-spacing: -0.02em;
+    line-height: 1.08;
+    color: var(--navy);
+  }
+
+  #hb-feed-page .hbf-muted {
+    color: var(--muted);
+    margin-top: 8px;
+    font-size: 14px;
+  }
+
+  #hb-feed-page .hbf-chips {
+    margin-top: 12px;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  #hb-feed-page .hbf-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid var(--stroke);
+    border-radius: 999px;
+    padding: 8px 12px;
+    background: #fff;
+    font-size: 13px;
+  }
+
+  #hb-feed-page .hbf-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  #hb-feed-page .hbf-toolbar {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+  }
+
+  #hb-feed-page .hbf-input {
+    flex: 1;
+    min-width: 240px;
+    border: 1px solid #cdd9e8;
+    border-radius: 14px;
+    padding: 11px 12px;
+    font-size: 14px;
+    background: #fff;
+    outline: none;
+    color: var(--text);
+  }
+
+  #hb-feed-page .hbf-input:focus {
+    border-color: rgba(14, 58, 93, 0.50);
+    box-shadow: 0 0 0 4px rgba(14, 58, 93, 0.12);
+  }
+
+  #hb-feed-page .hbf-btn {
+    border: 1px solid rgba(14, 58, 93, 0.20);
+    border-radius: 14px;
+    background: rgba(14, 58, 93, 0.08);
+    color: var(--text);
+    padding: 10px 12px;
+    font-weight: 800;
+    text-decoration: none;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    white-space: nowrap;
+  }
+
+  #hb-feed-page .hbf-btn:hover {
+    transform: translateY(-1px);
+  }
+
+  #hb-feed-page .hbf-btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  #hb-feed-page .hbf-btn-primary {
+    background: linear-gradient(180deg, var(--navy-2), var(--navy));
+    color: #fff;
+    border-color: rgba(14, 58, 93, 0.45);
+  }
+
+  #hb-feed-page .hbf-btn-ghost {
+    background: transparent;
+    border-color: #c8d5e6;
+    color: #334155;
+  }
+
+  #hb-feed-page .hbf-alert {
+    border: 1px solid #f5c3c3;
+    color: #7f1d1d;
+    border-radius: 14px;
+    background: #fff5f5;
+    padding: 10px 12px;
+    margin-bottom: 14px;
+    font-size: 13px;
+  }
+
+  #hb-feed-page .hbf-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  #hb-feed-page .hbf-card {
+    border: 1px solid var(--stroke);
+    border-radius: 18px;
+    background: var(--card);
+    padding: 14px;
+    box-shadow: 0 12px 30px rgba(8, 23, 44, 0.07);
+  }
+
+  #hb-feed-page .hbf-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  #hb-feed-page .hbf-author-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+  }
+
+  #hb-feed-page .hbf-avatar {
+    width: 42px;
+    height: 42px;
+    border-radius: 999px;
+    overflow: hidden;
+    border: 1px solid #c8d5e6;
+    background: #e7eff9;
+    flex: 0 0 auto;
+    display: grid;
+    place-items: center;
+    color: #1d4b77;
+    font-weight: 900;
+  }
+
+  #hb-feed-page .hbf-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  #hb-feed-page .hbf-author {
+    min-width: 0;
+  }
+
+  #hb-feed-page .hbf-name {
+    font-weight: 900;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  #hb-feed-page .hbf-meta {
+    color: var(--muted);
+    font-size: 12px;
+    margin-top: 3px;
+  }
+
+  #hb-feed-page .hbf-body {
+    margin-top: 12px;
+    white-space: pre-wrap;
+    line-height: 1.55;
+    font-size: 15px;
+  }
+
+  #hb-feed-page .hbf-tags {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 10px;
+  }
+
+  #hb-feed-page .hbf-tag {
+    display: inline-flex;
+    border-radius: 999px;
+    border: 1px solid #d5e2f1;
+    background: #f4f8ff;
+    color: #1d3d70;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 4px 8px;
+  }
+
+  #hb-feed-page .hbf-media {
+    margin-top: 12px;
+    border: 1px solid #d8e2ee;
+    border-radius: 14px;
+    overflow: hidden;
+    background: #f8fbff;
+  }
+
+  #hb-feed-page .hbf-media img {
+    width: 100%;
+    max-height: 460px;
+    object-fit: cover;
+    display: block;
+  }
+
+  #hb-feed-page .hbf-bottom {
+    margin-top: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  #hb-feed-page .hbf-stats {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  #hb-feed-page .hbf-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 9px;
+    border-radius: 999px;
+    border: 1px solid #d7e2f0;
+    background: var(--pill);
+    color: #27476f;
+    font-size: 12px;
+    font-weight: 800;
+  }
+
+  #hb-feed-page .hbf-tools {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  #hb-feed-page .hbf-mini-btn {
+    border: 1px solid #cfdced;
+    background: #fff;
+    color: #334155;
+    border-radius: 10px;
+    padding: 7px 9px;
+    font-size: 12px;
+    font-weight: 800;
+    cursor: pointer;
+  }
+
+  #hb-feed-page .hbf-mini-btn:hover {
+    background: #f8fbff;
+  }
+
+  #hb-feed-page .hbf-comment {
+    margin-top: 12px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 8px;
+  }
+
+  #hb-feed-page .hbf-comment input {
+    border: 1px solid #cfdced;
+    border-radius: 11px;
+    padding: 9px 10px;
+    font-size: 13px;
+    outline: none;
+    width: 100%;
+  }
+
+  #hb-feed-page .hbf-comment input:focus {
+    border-color: rgba(14, 58, 93, 0.45);
+    box-shadow: 0 0 0 3px rgba(14, 58, 93, 0.12);
+  }
+
+  #hb-feed-page .hbf-comment-note {
+    margin-top: 8px;
+    color: #47617f;
+    font-size: 12px;
+  }
+
+  #hb-feed-page .hbf-comments-wrap {
+    margin-top: 10px;
+    border: 1px solid #dbe6f4;
+    border-radius: 12px;
+    background: #f8fbff;
+    padding: 10px;
+  }
+
+  #hb-feed-page .hbf-comments-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  #hb-feed-page .hbf-comment-item {
+    border: 1px solid #d6e2f1;
+    border-radius: 10px;
+    padding: 8px 9px;
+    background: #fff;
+  }
+
+  #hb-feed-page .hbf-comment-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 8px;
+    margin-bottom: 5px;
+  }
+
+  #hb-feed-page .hbf-comment-author {
+    font-weight: 800;
+    font-size: 12px;
+    color: #1f3f65;
+  }
+
+  #hb-feed-page .hbf-comment-time {
+    color: #6b7f98;
+    font-size: 11px;
+  }
+
+  #hb-feed-page .hbf-comment-text {
+    white-space: pre-wrap;
+    line-height: 1.45;
+    font-size: 13px;
+    color: #0f1b2d;
+  }
+
+  #hb-feed-page .hbf-load-wrap {
+    margin-top: 14px;
+    display: flex;
+    justify-content: center;
+  }
+
+  #hb-feed-page .hbf-empty {
+    border: 1px solid var(--stroke);
+    border-radius: 14px;
+    background: #fff;
+    color: var(--muted);
+    padding: 12px;
+  }
+
+  #hb-feed-page .hbf-toast {
+    position: fixed;
+    right: 16px;
+    bottom: 16px;
+    z-index: 99999;
+    background: #0f172a;
+    color: #fff;
+    border-radius: 12px;
+    padding: 10px 12px;
+    opacity: 0;
+    transform: translateY(8px);
+    transition: 0.22s;
+  }
+
+  #hb-feed-page .hbf-toast.on {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  #hb-feed-page .hbf-debug {
+    margin-top: 12px;
+    border-radius: 12px;
+    background: #0b1220;
+    color: #dbeafe;
+    padding: 10px;
+    font-size: 12px;
+    max-height: 260px;
+    overflow: auto;
+    white-space: pre-wrap;
+  }
+
+  @media (max-width: 760px) {
+    #hb-feed-page .hbf-comment {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
+<script>
+(() => {
+  if (window.__HB_FEED_INIT__) return;
+  window.__HB_FEED_INIT__ = true;
+
+  const root = document.getElementById("hb-feed-page");
+  if (!root) return;
+
+  const HB = window.HB_CONFIG || {};
+  const DEBUG = new URLSearchParams(window.location.search).get("debug") === "1";
+
+  const elApi = document.getElementById("hbf-api");
+  const elCount = document.getElementById("hbf-count");
+  const elState = document.getElementById("hbf-state");
+  const elAlert = document.getElementById("hbf-alert");
+  const elList = document.getElementById("hbf-list");
+  const elSearch = document.getElementById("hbf-search");
+  const elClear = document.getElementById("hbf-clear");
+  const elRefresh = document.getElementById("hbf-refresh");
+  const elLoadMore = document.getElementById("hbf-load-more");
+  const elCreateLink = document.getElementById("hbf-create-link");
+  const elToast = document.getElementById("hbf-toast");
+  const elDebug = document.getElementById("hbf-debug");
+
+  const state = {
+    user: null,
+    posts: [],
+    profiles: {},
+    reacted: {},
+    commentsByPost: {},
+    commentsOpen: {},
+    commentsLoading: {},
+    cursor: null,
+    hasMore: true,
+    loading: false,
+  };
+
+  const LIMIT = Math.max(1, Number(root.getAttribute("data-load-limit") || "20") || 20);
+
+  function normalizeBase(v) {
+    return String(v || "").trim().replace(/\/+$/, "");
+  }
+
+  function normalizeApiBase(raw) {
+    const b = normalizeBase(raw);
+    if (!b) return "/api/v1";
+    if (/\/api\/v1$/i.test(b)) return b;
+    if (/\/api$/i.test(b)) return b + "/v1";
+    if (/^https?:\/\//i.test(b) || b.startsWith("/")) return b + "/api/v1";
+    return "/api/v1";
+  }
+
+  const API_BASE = normalizeApiBase(HB.apiBase || root.getAttribute("data-api-base") || "");
+  const WP_BASE = normalizeBase(root.getAttribute("data-wp-base") || window.location.origin);
+  function cleanInternalPathUrl(raw, fallback) {
+    const fb = String(fallback || "/posts-actualites/createpost/");
+    const txt = String(raw || "").trim();
+    if (!txt) return fb;
+    try {
+      const u = new URL(txt, window.location.origin);
+      return u.pathname || fb;
+    } catch (_e) {
+      return txt.startsWith("/") ? txt.split("?")[0].split("#")[0] : fb;
+    }
+  }
+
+  const CREATE_URL = cleanInternalPathUrl(
+    root.getAttribute("data-create-url"),
+    "/posts-actualites/createpost/"
+  );
+
+  if (elApi) elApi.textContent = API_BASE.replace(/^https?:\/\//, "");
+  if (elCreateLink) elCreateLink.href = CREATE_URL;
+
+  function debug(label, payload) {
+    if (!DEBUG || !elDebug) return;
+    elDebug.style.display = "block";
+    elDebug.textContent = label + "\n" + JSON.stringify(payload, null, 2);
+  }
+
+  function setState(text) {
+    if (elState) elState.textContent = text || "Pret";
+  }
+
+  function showAlert(msg) {
+    if (!elAlert) return;
+    if (!msg) {
+      elAlert.style.display = "none";
+      elAlert.textContent = "";
+      return;
+    }
+    elAlert.textContent = msg;
+    elAlert.style.display = "block";
+  }
+
+  function notify(msg) {
+    if (!elToast) return;
+    elToast.textContent = msg;
+    elToast.classList.add("on");
+    clearTimeout(notify._t);
+    notify._t = setTimeout(() => elToast.classList.remove("on"), 2400);
+  }
+
+  function esc(value) {
+    return String(value == null ? "" : value)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/\"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
+  function toFrDate(iso) {
+    if (!iso) return "-";
+    const d = new Date(iso);
+    if (String(d) === "Invalid Date") return String(iso);
+    return d.toLocaleString("fr-FR", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  }
+
+  function initials(name) {
+    const parts = String(name || "").trim().split(/\s+/).filter(Boolean);
+    if (!parts.length) return "HB";
+    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+    return (parts[0][0] + parts[1][0]).toUpperCase();
+  }
+
+  function mentionHandle(name, fallbackId) {
+    const raw = String(name || "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .trim()
+      .replace(/\s+/g, "_")
+      .replace(/[^a-z0-9._-]/g, "")
+      .replace(/^[_\.-]+|[_\.-]+$/g, "");
+    if (raw) return raw;
+    return "user_" + String(fallbackId || "");
+  }
+
+  function parseJsonSafe(txt) {
+    try {
+      return txt ? JSON.parse(txt) : null;
+    } catch (_e) {
+      return null;
+    }
+  }
+
+  function getInjectedUser() {
+    const u = HB.currentUser || window.HB_USER || null;
+    if (!u) return null;
+    return {
+      wp_id: u.wp_user_id || u.id || u.user_id || null,
+      id: u.id || u.wp_user_id || u.user_id || null,
+      user_id: u.user_id || u.id || u.wp_user_id || null,
+      email: u.email || u.user_email || "",
+      name: u.displayName || u.display_name || u.name || "",
+      roles: Array.isArray(u.roles) ? u.roles : (u.roles ? [u.roles] : []),
+    };
+  }
+
+  function normalizeWpUser(wp) {
+    const roles = wp.roles || [];
+    return {
+      wp_id: wp.id,
+      id: wp.id,
+      user_id: wp.id,
+      email: wp.email || wp.user_email || "",
+      name: wp.name || wp.display_name || wp.slug || "",
+      roles: Array.isArray(roles) ? roles : [roles],
+    };
+  }
+
+  async function fetchWpMe() {
+    const urls = [
+      WP_BASE + "/wp-json/wp/v2/users/me?context=edit",
+      WP_BASE + "/wp-json/wp/v2/users/me",
+    ];
+
+    for (const url of urls) {
+      try {
+        const res = await fetch(url, { method: "GET", credentials: "include" });
+        const txt = await res.text().catch(() => "");
+        const data = parseJsonSafe(txt);
+        debug("WP me", { url, status: res.status, body: data || txt });
+        if (res.ok && data && data.id) return normalizeWpUser(data);
+      } catch (err) {
+        debug("WP me error", { url, error: String(err) });
+      }
+    }
+
+    return null;
+  }
+
+  function token() {
+    return String(HB.token || "").trim();
+  }
+
+  function rolesList() {
+    const raw = (state.user && (state.user.roles || state.user.role)) || [];
+    return (Array.isArray(raw) ? raw : [raw]).map((x) => String(x || "").toLowerCase());
+  }
+
+  function headers(withJson) {
+    const h = { Accept: "application/json" };
+    if (withJson) h["Content-Type"] = "application/json";
+
+    const t = token();
+    if (t) h["Authorization"] = "Bearer " + t;
+
+    if (state.user) {
+      const wpId = state.user.wp_id || state.user.id || state.user.user_id;
+      if (wpId != null) h["X-WP-User-Id"] = String(wpId);
+      if (state.user.email) h["X-User-Email"] = String(state.user.email);
+      const roles = rolesList();
+      if (roles.length) h["X-WP-User-Roles"] = roles.join(",");
+    }
+
+    return h;
+  }
+
+  function apiUrl(path) {
+    return API_BASE + (path.startsWith("/") ? path : "/" + path);
+  }
+
+  async function apiGet(path) {
+    const url = apiUrl(path);
+    const res = await fetch(url, { method: "GET", headers: headers(false) });
+    const txt = await res.text().catch(() => "");
+    const data = parseJsonSafe(txt);
+    debug("GET " + path, { status: res.status, body: data || txt });
+
+    if (!res.ok) {
+      const msg = (data && data.detail) ? data.detail : ("HTTP " + res.status);
+      throw new Error(msg);
+    }
+
+    return data;
+  }
+
+  async function apiPost(path, payload) {
+    const url = apiUrl(path);
+    const res = await fetch(url, {
+      method: "POST",
+      headers: headers(true),
+      body: JSON.stringify(payload || {}),
+    });
+    const txt = await res.text().catch(() => "");
+    const data = parseJsonSafe(txt);
+    debug("POST " + path, { status: res.status, body: data || txt, payload: payload || {} });
+
+    if (!res.ok) {
+      const msg = (data && data.detail) ? data.detail : ("HTTP " + res.status);
+      throw new Error(msg);
+    }
+
+    return data;
+  }
+
+  async function ensureUser() {
+    state.user = getInjectedUser();
+
+    if (!state.user || !(state.user.wp_id || state.user.id || state.user.user_id)) {
+      const wpMe = await fetchWpMe();
+      if (wpMe) {
+        state.user = wpMe;
+        window.HB_USER = wpMe;
+      }
+    }
+  }
+
+  async function loadAuthorProfile(wpId) {
+    const key = String(wpId || "");
+    if (!key) return null;
+    if (state.profiles[key]) return state.profiles[key];
+
+    const fallback = {
+      id: Number(wpId),
+      name: "Utilisateur #" + key,
+      avatar: "",
+    };
+
+    const urls = [
+      WP_BASE + "/wp-json/wp/v2/users/" + encodeURIComponent(key) + "?context=embed",
+      WP_BASE + "/wp-json/wp/v2/users/" + encodeURIComponent(key),
+    ];
+
+    for (const url of urls) {
+      try {
+        const res = await fetch(url, { method: "GET", credentials: "include" });
+        const txt = await res.text().catch(() => "");
+        const data = parseJsonSafe(txt);
+        if (res.ok && data && data.id) {
+          const profile = {
+            id: Number(data.id),
+            name: String(data.name || data.display_name || data.slug || fallback.name),
+            avatar: data.avatar_urls ? (data.avatar_urls["96"] || data.avatar_urls["48"] || data.avatar_urls["24"] || "") : "",
+          };
+          state.profiles[key] = profile;
+          return profile;
+        }
+      } catch (_e) {}
+    }
+
+    state.profiles[key] = fallback;
+    return fallback;
+  }
+
+  function matchPost(post, query) {
+    if (!query) return true;
+
+    const q = query.toLowerCase();
+    const profile = state.profiles[String(post.author_wp_user_id)] || {};
+
+    const hay = [
+      String(post.content || ""),
+      String(profile.name || ""),
+      ...(Array.isArray(post.hashtags) ? post.hashtags : []),
+      ...(Array.isArray(post.mentions) ? post.mentions.map((m) => "@" + m) : []),
+    ].join(" ").toLowerCase();
+
+    return hay.includes(q);
+  }
+
+  function updateCounters() {
+    if (elCount) elCount.textContent = String(state.posts.length);
+    if (elLoadMore) elLoadMore.style.display = state.hasMore ? "inline-flex" : "none";
+  }
+
+  function renderPosts() {
+    const query = String(elSearch && elSearch.value ? elSearch.value : "").trim();
+    const rows = state.posts.filter((p) => matchPost(p, query));
+
+    if (!rows.length) {
+      elList.innerHTML = '<div class="hbf-empty">Aucun post a afficher.</div>';
+      updateCounters();
+      return;
+    }
+
+    elList.innerHTML = rows.map((p) => {
+      const profile = state.profiles[String(p.author_wp_user_id)] || {};
+      const authorName = profile.name || ("Utilisateur #" + p.author_wp_user_id);
+      const avatar = profile.avatar || "";
+      const short = initials(authorName);
+      const authorHandle = mentionHandle(authorName, p.author_wp_user_id);
+      const tags = Array.isArray(p.hashtags) ? p.hashtags : [];
+      const postKey = String(p.id);
+      const liked = !!p.liked_by_me || !!state.reacted[postKey];
+      const comments = Array.isArray(state.commentsByPost[postKey]) ? state.commentsByPost[postKey] : [];
+      const commentsOpen = !!state.commentsOpen[postKey];
+      const commentsLoading = !!state.commentsLoading[postKey];
+
+      let commentsBody = '<div class="hbf-empty">Aucun commentaire.</div>';
+      if (commentsLoading) {
+        commentsBody = '<div class="hbf-empty">Chargement des commentaires...</div>';
+      } else if (comments.length) {
+        commentsBody = '<div class="hbf-comments-list">' + comments.map((c) => {
+          const cName = c.author_name || ('Utilisateur #' + c.author_wp_user_id);
+          const cHandle = mentionHandle(cName, c.author_wp_user_id);
+          return (
+            '<article class="hbf-comment-item">' +
+              '<div class="hbf-comment-head">' +
+                '<span class="hbf-comment-author">@' + esc(cHandle) + '</span>' +
+                '<span class="hbf-comment-time">' + esc(toFrDate(c.created_at)) + '</span>' +
+              '</div>' +
+              '<div class="hbf-comment-text">' + esc(c.content || '') + '</div>' +
+            '</article>'
+          );
+        }).join('') + '</div>';
+      }
+
+      return (
+        '<article class="hbf-card" data-post-id="' + esc(p.id) + '">' +
+          '<div class="hbf-top">' +
+            '<div class="hbf-author-wrap">' +
+              '<div class="hbf-avatar">' +
+                (avatar ? ('<img src="' + esc(avatar) + '" alt="">') : ('<span>' + esc(short) + '</span>')) +
+              '</div>' +
+              '<div class="hbf-author">' +
+                '<div class="hbf-name">' + esc(authorName) + '</div>' +
+                '<div class="hbf-meta">@' + esc(authorHandle) + ' • ' + esc(toFrDate(p.created_at)) + '</div>' +
+              '</div>' +
+            '</div>' +
+          '</div>' +
+
+          '<div class="hbf-body">' + esc(p.content || "") + '</div>' +
+
+          (tags.length ? ('<div class="hbf-tags">' + tags.slice(0, 8).map((h) => '<span class="hbf-tag">#' + esc(h) + '</span>').join('') + '</div>') : '') +
+
+          (p.asset_url ? ('<div class="hbf-media"><img src="' + esc(p.asset_url) + '" alt="Media du post" loading="lazy"></div>') : '') +
+
+          '<div class="hbf-bottom">' +
+            '<div class="hbf-stats">' +
+              '<span class="hbf-pill">Reactions: <b data-reaction-count="' + esc(p.id) + '">' + esc(p.reactions_count || 0) + '</b></span>' +
+              '<span class="hbf-pill">Commentaires: <b data-comment-count="' + esc(p.id) + '">' + esc(p.comments_count || 0) + '</b></span>' +
+            '</div>' +
+            '<div class="hbf-tools">' +
+              '<button class="hbf-mini-btn" type="button" data-like="' + esc(p.id) + '">' + (liked ? 'Deja aime' : "J'aime") + '</button>' +
+              '<button class="hbf-mini-btn" type="button" data-comments-toggle="' + esc(p.id) + '">' + (commentsOpen ? 'Masquer commentaires' : 'Voir commentaires') + '</button>' +
+              '<button class="hbf-mini-btn" type="button" data-report="' + esc(p.id) + '">Signaler</button>' +
+            '</div>' +
+          '</div>' +
+
+          '<div class="hbf-comments-wrap" data-comments-wrap="' + esc(p.id) + '" style="display:' + (commentsOpen ? 'block' : 'none') + ';">' +
+            commentsBody +
+          '</div>' +
+
+          '<div class="hbf-comment">' +
+            '<input type="text" maxlength="500" data-comment-input="' + esc(p.id) + '" placeholder="Ajouter un commentaire...">' +
+            '<button class="hbf-mini-btn" type="button" data-comment-send="' + esc(p.id) + '">Envoyer</button>' +
+          '</div>' +
+          '<div class="hbf-comment-note">Tu peux commenter autant de fois que tu veux.</div>' +
+        '</article>'
+      );
+    }).join("");
+
+    updateCounters();
+  }
+
+  function mergePosts(existing, incoming) {
+    const map = {};
+    for (const p of existing) map[String(p.id)] = p;
+    for (const p of incoming) map[String(p.id)] = p;
+    return Object.values(map).sort((a, b) => Number(b.id) - Number(a.id));
+  }
+
+  async function loadFeed(reset) {
+    if (state.loading) return;
+    if (!state.user) {
+      showAlert("Connecte-toi pour acceder au feed.");
+      return;
+    }
+
+    state.loading = true;
+    setState("Chargement...");
+    if (elLoadMore) elLoadMore.disabled = true;
+
+    try {
+      if (reset) {
+        state.cursor = null;
+        state.hasMore = true;
+        state.posts = [];
+      }
+
+      const q = ["limit=" + encodeURIComponent(String(LIMIT))];
+      if (!reset && state.cursor) q.push("cursor=" + encodeURIComponent(String(state.cursor)));
+      const rows = await apiGet("/posts/feed?" + q.join("&"));
+      const list = Array.isArray(rows) ? rows : [];
+
+      state.posts = mergePosts(state.posts, list);
+      state.posts.forEach((post) => {
+        if (post && post.id != null && post.liked_by_me) {
+          state.reacted[String(post.id)] = true;
+        }
+      });
+
+      const ids = state.posts
+        .map((x) => Number(x.id))
+        .filter((x) => Number.isFinite(x));
+      state.cursor = ids.length ? Math.min.apply(null, ids) : null;
+
+      state.hasMore = list.length >= LIMIT;
+
+      const authorIds = Array.from(new Set(list.map((x) => Number(x.author_wp_user_id)).filter((x) => Number.isFinite(x))));
+      await Promise.all(authorIds.map((id) => loadAuthorProfile(id)));
+
+      renderPosts();
+      showAlert("");
+      setState("Pret");
+    } catch (err) {
+      console.error(err);
+      const msg = String(err && err.message ? err.message : err);
+      showAlert(msg);
+      if (!state.posts.length) {
+        elList.innerHTML = '<div class="hbf-empty">Erreur de chargement du feed.</div>';
+      }
+      setState("Erreur");
+    } finally {
+      state.loading = false;
+      if (elLoadMore) elLoadMore.disabled = false;
+      updateCounters();
+    }
+  }
+
+  function findPost(postId) {
+    return state.posts.find((p) => String(p.id) === String(postId)) || null;
+  }
+
+  async function loadComments(postId, force) {
+    const key = String(postId);
+    if (!force && Array.isArray(state.commentsByPost[key])) {
+      return state.commentsByPost[key];
+    }
+
+    state.commentsLoading[key] = true;
+    renderPosts();
+    try {
+      const rows = await apiGet("/posts/" + encodeURIComponent(postId) + "/comments?limit=100");
+      const list = Array.isArray(rows) ? rows : [];
+      state.commentsByPost[key] = list;
+      return list;
+    } finally {
+      state.commentsLoading[key] = false;
+      renderPosts();
+    }
+  }
+
+  async function toggleComments(postId) {
+    const key = String(postId);
+    const open = !!state.commentsOpen[key];
+    if (open) {
+      state.commentsOpen[key] = false;
+      renderPosts();
+      return;
+    }
+    state.commentsOpen[key] = true;
+    renderPosts();
+    await loadComments(postId, false);
+  }
+
+  async function likePost(postId, button) {
+    const p = findPost(postId);
+    if (!p) return;
+
+    const key = String(postId);
+    if (p.liked_by_me || state.reacted[key]) {
+      notify("Tu as déjà aimé ce post");
+      return;
+    }
+
+    if (button) button.disabled = true;
+    try {
+      await apiPost("/posts/" + encodeURIComponent(postId) + "/reactions", { reaction_type: "like" });
+      state.reacted[key] = true;
+      p.liked_by_me = true;
+      p.reactions_count = Number(p.reactions_count || 0) + 1;
+      renderPosts();
+      notify("Reaction enregistree");
+    } catch (err) {
+      console.error(err);
+      notify(String(err && err.message ? err.message : err));
+      if (button) button.disabled = false;
+    }
+  }
+
+  async function sendComment(postId, inputEl, buttonEl) {
+    const p = findPost(postId);
+    if (!p || !inputEl) return;
+
+    const content = String(inputEl.value || "").trim();
+    if (!content) {
+      notify("Commentaire vide");
+      return;
+    }
+
+    if (buttonEl) buttonEl.disabled = true;
+    try {
+      const created = await apiPost("/posts/" + encodeURIComponent(postId) + "/comments", { content });
+      p.comments_count = Number(p.comments_count || 0) + 1;
+      const key = String(postId);
+      const existing = Array.isArray(state.commentsByPost[key]) ? state.commentsByPost[key] : [];
+      existing.push(created);
+      state.commentsByPost[key] = existing.slice(-100);
+      state.commentsOpen[key] = true;
+      inputEl.value = "";
+      renderPosts();
+      notify("Commentaire envoye");
+    } catch (err) {
+      console.error(err);
+      notify(String(err && err.message ? err.message : err));
+      if (buttonEl) buttonEl.disabled = false;
+    }
+  }
+
+  async function reportPost(postId) {
+    const reason = window.prompt("Raison du signalement (min 6 caracteres)", "Contenu inapproprie");
+    if (!reason) return;
+
+    const clean = String(reason || "").trim();
+    if (clean.length < 6) {
+      notify("Raison trop courte");
+      return;
+    }
+
+    try {
+      await apiPost("/posts/reports", {
+        target_type: "post",
+        target_id: String(postId),
+        reason: clean,
+      });
+      notify("Signalement envoye");
+    } catch (err) {
+      console.error(err);
+      notify(String(err && err.message ? err.message : err));
+    }
+  }
+
+  root.addEventListener("click", (ev) => {
+    const likeBtn = ev.target.closest("[data-like]");
+    if (likeBtn) {
+      likePost(likeBtn.getAttribute("data-like"), likeBtn);
+      return;
+    }
+
+    const reportBtn = ev.target.closest("[data-report]");
+    if (reportBtn) {
+      reportPost(reportBtn.getAttribute("data-report"));
+      return;
+    }
+
+    const toggleBtn = ev.target.closest("[data-comments-toggle]");
+    if (toggleBtn) {
+      toggleComments(toggleBtn.getAttribute("data-comments-toggle"));
+      return;
+    }
+
+    const sendBtn = ev.target.closest("[data-comment-send]");
+    if (sendBtn) {
+      const postId = sendBtn.getAttribute("data-comment-send");
+      const input = root.querySelector('[data-comment-input="' + postId + '"]');
+      sendComment(postId, input, sendBtn);
+      return;
+    }
+  });
+
+  root.addEventListener("keydown", (ev) => {
+    const input = ev.target.closest("[data-comment-input]");
+    if (!input) return;
+    if (ev.key === "Enter" && !ev.shiftKey) {
+      ev.preventDefault();
+      const postId = input.getAttribute("data-comment-input");
+      const button = root.querySelector('[data-comment-send="' + postId + '"]');
+      sendComment(postId, input, button);
+    }
+  });
+
+  if (elSearch) {
+    elSearch.addEventListener("input", () => {
+      clearTimeout(elSearch._t);
+      elSearch._t = setTimeout(renderPosts, 120);
+    });
+  }
+
+  if (elClear) {
+    elClear.addEventListener("click", () => {
+      if (elSearch) elSearch.value = "";
+      renderPosts();
+    });
+  }
+
+  if (elRefresh) {
+    elRefresh.addEventListener("click", () => loadFeed(true));
+  }
+
+  if (elLoadMore) {
+    elLoadMore.addEventListener("click", () => {
+      if (!state.hasMore) return;
+      loadFeed(false);
+    });
+  }
+
+  (async function boot() {
+    try {
+      setState("Initialisation...");
+      await ensureUser();
+
+      if (!state.user) {
+        showAlert("Connecte-toi pour acceder au feed.");
+        elList.innerHTML = '<div class="hbf-empty">Utilisateur non connecte.</div>';
+        setState("Non connecte");
+        return;
+      }
+
+      await loadFeed(true);
+    } catch (err) {
+      console.error(err);
+      showAlert(String(err && err.message ? err.message : err));
+      setState("Erreur");
+    }
+  })();
+})();
+</script>

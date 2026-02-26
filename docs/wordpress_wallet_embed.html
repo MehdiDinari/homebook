@@ -1,0 +1,1130 @@
+<div id="hb-wallet-app" class="hbw" data-api-base="" data-wp-base="" data-default-provider="paypal">
+  <header class="hbw-hero">
+    <div>
+      <p class="hbw-kicker">HomeBook Wallet</p>
+      <h1>Mon portefeuille</h1>
+      <p class="hbw-sub">Recharge ton solde en points via PayPal (ou provider auto), suis tes depots et tes paiements d'abonnement.</p>
+      <div class="hbw-chips">
+        <span class="hbw-chip">API <b id="hbw-api">-</b></span>
+        <span class="hbw-chip">Role <b id="hbw-role">-</b></span>
+        <span class="hbw-chip">Provider <b id="hbw-provider">-</b></span>
+      </div>
+    </div>
+
+    <div class="hbw-card hbw-mini">
+      <div class="hbw-row"><span class="hbw-muted">Compte</span><b id="hbw-who">Chargement...</b></div>
+      <div class="hbw-row"><span class="hbw-muted">Points disponibles</span><b id="hbw-points">-</b></div>
+      <div class="hbw-row"><span class="hbw-muted">Depose (EUR)</span><b id="hbw-deposited">-</b></div>
+      <div class="hbw-row"><span class="hbw-muted">Depense (EUR)</span><b id="hbw-spent">-</b></div>
+      <div class="hbw-row"><span class="hbw-muted">Statut</span><b id="hbw-status">Pret</b></div>
+    </div>
+  </header>
+
+  <section class="hbw-top-grid">
+    <article class="hbw-card">
+      <h2>Recharger mon wallet</h2>
+      <p class="hbw-help">1 EUR = 1 point. Minimum 1 EUR. Recommande: 20 EUR pour 20 points.</p>
+
+      <div class="hbw-quick">
+        <button class="hbw-quick-btn" type="button" data-eur="10">10 EUR</button>
+        <button class="hbw-quick-btn" type="button" data-eur="20">20 EUR</button>
+        <button class="hbw-quick-btn" type="button" data-eur="50">50 EUR</button>
+        <button class="hbw-quick-btn" type="button" data-eur="100">100 EUR</button>
+      </div>
+
+      <div class="hbw-form-grid">
+        <label>
+          <span>Montant (EUR)</span>
+          <input id="hbw-amount-eur" class="hbw-input" type="number" min="1" step="1" value="20" />
+        </label>
+
+        <label>
+          <span>Provider</span>
+          <select id="hbw-provider-select" class="hbw-select">
+            <option value="paypal">PayPal</option>
+            <option value="auto">Auto</option>
+            <option value="stripe">Stripe</option>
+            <option value="mock">Mock (dev)</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="hbw-preview" id="hbw-preview">-</div>
+
+      <div class="hbw-actions">
+        <button id="hbw-topup-btn" class="hbw-btn" type="button">Recharger maintenant</button>
+        <button id="hbw-refresh-btn" class="hbw-btn hbw-btn-ghost" type="button">Actualiser</button>
+      </div>
+
+      <div class="hbw-sep"></div>
+
+      <div class="hbw-manual">
+        <label>
+          <span>Confirmation manuelle (checkout token)</span>
+          <input id="hbw-confirm-token" class="hbw-input" type="text" placeholder="ex: PAYPAL_ORDER_ID..." />
+        </label>
+        <button id="hbw-confirm-btn" class="hbw-btn hbw-btn-ghost" type="button">Confirmer ce topup</button>
+      </div>
+    </article>
+
+    <article class="hbw-card">
+      <h2>Synthese financiere</h2>
+      <div id="hbw-metrics" class="hbw-metrics"></div>
+
+      <div class="hbw-sep"></div>
+
+      <h3>Abonnements actifs</h3>
+      <div id="hbw-subs" class="hbw-list"></div>
+
+      <div class="hbw-sep"></div>
+
+      <h3>Raccourcis</h3>
+      <div class="hbw-links">
+        <a class="hbw-btn hbw-btn-ghost" href="/trouverunprof/">Trouver un prof</a>
+        <a class="hbw-btn hbw-btn-ghost" href="/etudiant/">Dashboard eleve</a>
+        <a class="hbw-btn hbw-btn-ghost" href="/calendrier/">Calendrier</a>
+        <a class="hbw-btn hbw-btn-ghost" href="/paiement-ok/">Page paiement OK</a>
+        <a class="hbw-btn hbw-btn-ghost" href="/paiement-annule/">Page paiement annule</a>
+      </div>
+    </article>
+  </section>
+
+  <section class="hbw-data-grid">
+    <article class="hbw-card">
+      <div class="hbw-card-head">
+        <h2>Historique topups</h2>
+        <select id="hbw-topup-status" class="hbw-select hbw-select-sm">
+          <option value="all">Tous statuts</option>
+          <option value="pending">Pending</option>
+          <option value="paid">Paid</option>
+        </select>
+      </div>
+      <div id="hbw-topups" class="hbw-list"></div>
+    </article>
+
+    <article class="hbw-card">
+      <div class="hbw-card-head">
+        <h2>Ledger points</h2>
+        <select id="hbw-ledger-filter" class="hbw-select hbw-select-sm">
+          <option value="all">Tout</option>
+          <option value="credit">Credits</option>
+          <option value="debit">Debits</option>
+        </select>
+      </div>
+      <div id="hbw-ledger" class="hbw-list"></div>
+    </article>
+
+    <article class="hbw-card hbw-span-2">
+      <h2>Paiements abonnements</h2>
+      <div id="hbw-payments" class="hbw-list"></div>
+    </article>
+  </section>
+
+  <pre id="hbw-debug" class="hbw-debug" style="display:none;"></pre>
+  <div id="hbw-toast" class="hbw-toast" aria-live="polite"></div>
+</div>
+
+<style>
+  @import url("https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Playfair+Display:wght@600&display=swap");
+
+  #hb-wallet-app.hbw {
+    --bg: #f4f7fc;
+    --card: #ffffff;
+    --line: #d8e2ef;
+    --line-strong: #b8c7dc;
+    --ink: #10233d;
+    --ink-soft: #4a6585;
+    --navy: #12375d;
+    --navy-2: #214f7d;
+    --navy-wash: rgba(33, 79, 125, 0.1);
+    --ok: #128a52;
+    --ok-wash: rgba(18, 138, 82, 0.12);
+    --warn: #c07815;
+    --warn-wash: rgba(192, 120, 21, 0.12);
+    --radius: 16px;
+
+    font-family: "Manrope", sans-serif;
+    color: var(--ink);
+    border: 1px solid var(--line);
+    border-radius: 24px;
+    padding: 22px;
+    background:
+      radial-gradient(1200px 420px at -10% -25%, rgba(18, 55, 93, 0.1), transparent 60%),
+      radial-gradient(950px 380px at 115% -20%, rgba(33, 79, 125, 0.08), transparent 60%),
+      var(--bg);
+    box-shadow: 0 24px 62px rgba(16, 35, 61, 0.11);
+  }
+
+  #hb-wallet-app * { box-sizing: border-box; }
+
+  #hb-wallet-app .hbw-hero {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    gap: 14px;
+    margin-bottom: 14px;
+  }
+
+  #hb-wallet-app .hbw-kicker {
+    margin: 0 0 8px;
+    color: var(--navy-2);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  #hb-wallet-app h1 {
+    margin: 0;
+    font-family: "Playfair Display", serif;
+    font-size: clamp(30px, 4vw, 44px);
+    line-height: 1.06;
+    letter-spacing: -0.02em;
+  }
+
+  #hb-wallet-app h2 {
+    margin: 0;
+    font-size: 18px;
+  }
+
+  #hb-wallet-app h3 {
+    margin: 0;
+    font-size: 15px;
+  }
+
+  #hb-wallet-app .hbw-sub {
+    margin-top: 9px;
+    color: var(--ink-soft);
+    max-width: 720px;
+  }
+
+  #hb-wallet-app .hbw-muted { color: var(--ink-soft); }
+
+  #hb-wallet-app .hbw-chips {
+    margin-top: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  #hb-wallet-app .hbw-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 7px 11px;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    background: #fff;
+    color: #334f71;
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  #hb-wallet-app .hbw-card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 14px;
+    box-shadow: 0 12px 34px rgba(16, 35, 61, 0.08);
+  }
+
+  #hb-wallet-app .hbw-mini { min-width: 320px; }
+
+  #hb-wallet-app .hbw-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 5px 0;
+    font-size: 14px;
+  }
+
+  #hb-wallet-app .hbw-top-grid {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  #hb-wallet-app .hbw-data-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  #hb-wallet-app .hbw-span-2 { grid-column: 1 / -1; }
+
+  #hb-wallet-app .hbw-help {
+    margin: 8px 0 10px;
+    color: #4f6989;
+    font-size: 13px;
+  }
+
+  #hb-wallet-app .hbw-quick {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+
+  #hb-wallet-app .hbw-quick-btn {
+    border: 1px solid var(--line-strong);
+    background: #fff;
+    color: #23496f;
+    border-radius: 999px;
+    padding: 7px 12px;
+    font-size: 12px;
+    font-weight: 800;
+    cursor: pointer;
+  }
+
+  #hb-wallet-app .hbw-quick-btn:hover { border-color: #7d99bc; }
+
+  #hb-wallet-app .hbw-form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  #hb-wallet-app label span {
+    display: block;
+    margin-bottom: 5px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #48688d;
+  }
+
+  #hb-wallet-app .hbw-input,
+  #hb-wallet-app .hbw-select {
+    width: 100%;
+    border: 1px solid #c8d5e6;
+    border-radius: 12px;
+    background: #fff;
+    color: var(--ink);
+    font-family: inherit;
+    font-size: 13px;
+    padding: 9px 10px;
+    outline: none;
+  }
+
+  #hb-wallet-app .hbw-select-sm { width: auto; min-width: 130px; }
+
+  #hb-wallet-app .hbw-input:focus,
+  #hb-wallet-app .hbw-select:focus {
+    border-color: #6d8eb3;
+    box-shadow: 0 0 0 4px rgba(33, 79, 125, 0.15);
+  }
+
+  #hb-wallet-app .hbw-preview {
+    margin-top: 10px;
+    border: 1px dashed #c9d7e9;
+    border-radius: 12px;
+    background: #f8fbff;
+    color: #36587f;
+    font-size: 13px;
+    font-weight: 700;
+    padding: 10px;
+  }
+
+  #hb-wallet-app .hbw-actions,
+  #hb-wallet-app .hbw-links,
+  #hb-wallet-app .hbw-manual {
+    margin-top: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+  }
+
+  #hb-wallet-app .hbw-manual {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  #hb-wallet-app .hbw-btn {
+    border: 1px solid rgba(33, 79, 125, 0.38);
+    background: linear-gradient(180deg, #205181, #143f68);
+    color: #f8fbff;
+    border-radius: 12px;
+    padding: 9px 12px;
+    font-size: 13px;
+    font-weight: 700;
+    text-decoration: none;
+    cursor: pointer;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.12s ease, filter 0.12s ease;
+  }
+
+  #hb-wallet-app .hbw-btn:hover {
+    transform: translateY(-1px);
+    filter: brightness(1.06);
+  }
+
+  #hb-wallet-app .hbw-btn:disabled {
+    opacity: 0.56;
+    cursor: not-allowed;
+    transform: none;
+    filter: none;
+  }
+
+  #hb-wallet-app .hbw-btn-ghost {
+    background: #fff;
+    color: #244a72;
+    border-color: var(--line-strong);
+  }
+
+  #hb-wallet-app .hbw-sep {
+    margin: 12px 0;
+    border-top: 1px solid var(--line);
+  }
+
+  #hb-wallet-app .hbw-metrics,
+  #hb-wallet-app .hbw-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 9px;
+  }
+
+  #hb-wallet-app .hbw-item {
+    border: 1px solid #d8e3ef;
+    border-radius: 12px;
+    background: #fff;
+    padding: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+  }
+
+  #hb-wallet-app .hbw-item-left { min-width: 0; flex: 1; }
+
+  #hb-wallet-app .hbw-item-title {
+    font-size: 13px;
+    font-weight: 800;
+    color: #173f67;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  #hb-wallet-app .hbw-item-sub {
+    margin-top: 4px;
+    color: #587492;
+    font-size: 11px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  #hb-wallet-app .hbw-item-right {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  #hb-wallet-app .hbw-badge {
+    border: 1px solid #d5e0ee;
+    border-radius: 999px;
+    background: #f5f9ff;
+    color: #23486f;
+    padding: 4px 7px;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+  }
+
+  #hb-wallet-app .hbw-badge.ok {
+    border-color: rgba(18, 138, 82, 0.34);
+    color: #13683f;
+    background: var(--ok-wash);
+  }
+
+  #hb-wallet-app .hbw-badge.warn {
+    border-color: rgba(192, 120, 21, 0.34);
+    color: #8a530f;
+    background: var(--warn-wash);
+  }
+
+  #hb-wallet-app .hbw-empty {
+    border: 1px solid var(--line);
+    border-radius: 11px;
+    background: #fff;
+    color: #597595;
+    padding: 10px;
+    font-size: 13px;
+  }
+
+  #hb-wallet-app .hbw-card-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  #hb-wallet-app .hbw-debug {
+    margin-top: 12px;
+    border-radius: 12px;
+    background: #0a1321;
+    color: #d6e4f6;
+    padding: 10px;
+    font-size: 12px;
+    max-height: 260px;
+    overflow: auto;
+    white-space: pre-wrap;
+  }
+
+  #hb-wallet-app .hbw-toast {
+    position: fixed;
+    right: 16px;
+    bottom: 16px;
+    z-index: 99999;
+    background: #0f2744;
+    color: #fff;
+    border-radius: 10px;
+    padding: 10px 12px;
+    opacity: 0;
+    transform: translateY(8px);
+    transition: 0.2s;
+  }
+
+  #hb-wallet-app .hbw-toast.is-on {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  @media (max-width: 1080px) {
+    #hb-wallet-app .hbw-top-grid,
+    #hb-wallet-app .hbw-data-grid {
+      grid-template-columns: 1fr;
+    }
+
+    #hb-wallet-app .hbw-span-2 {
+      grid-column: auto;
+    }
+
+    #hb-wallet-app .hbw-mini { min-width: 280px; }
+  }
+
+  @media (max-width: 720px) {
+    #hb-wallet-app .hbw-form-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
+<script>
+(() => {
+  const root = document.getElementById("hb-wallet-app");
+  if (!root) return;
+
+  const HB = window.HB_CONFIG || {};
+  const DEBUG = new URLSearchParams(window.location.search).get("debug") === "1";
+
+  const el = {
+    api: document.getElementById("hbw-api"),
+    role: document.getElementById("hbw-role"),
+    provider: document.getElementById("hbw-provider"),
+    who: document.getElementById("hbw-who"),
+    points: document.getElementById("hbw-points"),
+    deposited: document.getElementById("hbw-deposited"),
+    spent: document.getElementById("hbw-spent"),
+    status: document.getElementById("hbw-status"),
+    amountEur: document.getElementById("hbw-amount-eur"),
+    providerSelect: document.getElementById("hbw-provider-select"),
+    preview: document.getElementById("hbw-preview"),
+    topupBtn: document.getElementById("hbw-topup-btn"),
+    refreshBtn: document.getElementById("hbw-refresh-btn"),
+    confirmToken: document.getElementById("hbw-confirm-token"),
+    confirmBtn: document.getElementById("hbw-confirm-btn"),
+    metrics: document.getElementById("hbw-metrics"),
+    subs: document.getElementById("hbw-subs"),
+    topups: document.getElementById("hbw-topups"),
+    topupStatus: document.getElementById("hbw-topup-status"),
+    ledger: document.getElementById("hbw-ledger"),
+    ledgerFilter: document.getElementById("hbw-ledger-filter"),
+    payments: document.getElementById("hbw-payments"),
+    debug: document.getElementById("hbw-debug"),
+    toast: document.getElementById("hbw-toast")
+  };
+
+  const state = {
+    token: String(HB.token || "").trim(),
+    apiBase: "",
+    wpBase: "",
+    user: null,
+    studentWpId: null,
+    roles: [],
+    money: null,
+    subs: [],
+    topups: [],
+    ledger: [],
+    payments: [],
+    loading: false
+  };
+
+  function normalizeBase(v) {
+    return String(v || "").trim().replace(/\/+$/, "");
+  }
+
+  function normalizeApiBase(raw) {
+    const base = normalizeBase(raw);
+    if (!base) return "/api/v1";
+    if (/\/api\/v1$/i.test(base)) return base;
+    if (/\/api$/i.test(base)) return base + "/v1";
+    if (/^https?:\/\//i.test(base) || base.startsWith("/")) return base + "/api/v1";
+    return "/api/v1";
+  }
+
+  state.apiBase = normalizeApiBase(HB.apiBase || root.getAttribute("data-api-base") || "");
+  state.wpBase = normalizeBase(root.getAttribute("data-wp-base") || window.location.origin);
+
+  if (el.api) el.api.textContent = state.apiBase.replace(/^https?:\/\//, "");
+
+  const defaultProvider = String(root.getAttribute("data-default-provider") || "paypal").trim().toLowerCase();
+  if (el.providerSelect) el.providerSelect.value = ["paypal", "auto", "stripe", "mock"].includes(defaultProvider) ? defaultProvider : "paypal";
+  if (el.provider) el.provider.textContent = (el.providerSelect ? el.providerSelect.value : defaultProvider);
+
+  function setStatus(text) {
+    if (el.status) el.status.textContent = text || "Pret";
+  }
+
+  function toast(msg) {
+    if (!el.toast) return;
+    el.toast.textContent = msg;
+    el.toast.classList.add("is-on");
+    clearTimeout(toast._t);
+    toast._t = setTimeout(() => el.toast.classList.remove("is-on"), 2400);
+  }
+
+  function debug(label, payload) {
+    if (!DEBUG || !el.debug) return;
+    el.debug.style.display = "block";
+    el.debug.textContent = label + "\n" + JSON.stringify(payload, null, 2);
+  }
+
+  function esc(v) {
+    return String(v == null ? "" : v)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
+  function fmtDate(iso) {
+    const d = new Date(iso);
+    if (String(d) === "Invalid Date") return String(iso || "-");
+    return d.toLocaleString("fr-FR", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit"
+    });
+  }
+
+  function eur(cents) {
+    const amount = Number(cents || 0) / 100;
+    return new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" }).format(amount);
+  }
+
+  function int(v, fallback) {
+    const n = Number(v);
+    return Number.isFinite(n) ? n : fallback;
+  }
+
+  function isStudentLike() {
+    const roles = (state.roles || []).map((r) => String(r || "").toLowerCase());
+    return roles.includes("student") || roles.includes("administrator");
+  }
+
+  function authHeaders(withJson) {
+    const h = {};
+    if (withJson) h["Content-Type"] = "application/json";
+    if (state.token) {
+      h["Authorization"] = "Bearer " + state.token;
+      h["X-HB-Token"] = state.token;
+    }
+
+    if (state.user) {
+      const wpId = state.studentWpId;
+      if (wpId != null) h["X-WP-User-Id"] = String(wpId);
+      if (state.user.email) h["X-User-Email"] = String(state.user.email);
+      if (state.roles.length) h["X-WP-User-Roles"] = state.roles.join(",");
+    }
+
+    return h;
+  }
+
+  function apiUrl(path) {
+    const p = path.startsWith("/") ? path : ("/" + path);
+    return state.apiBase + p;
+  }
+
+  async function parseResponse(res) {
+    const txt = await res.text().catch(() => "");
+    let data = null;
+    try { data = txt ? JSON.parse(txt) : null; } catch (_e) { data = null; }
+    return { txt, data };
+  }
+
+  async function apiGet(path) {
+    const res = await fetch(apiUrl(path), {
+      method: "GET",
+      headers: authHeaders(false),
+      credentials: "same-origin"
+    });
+    const parsed = await parseResponse(res);
+    debug("GET " + path, { status: res.status, body: parsed.data || parsed.txt });
+    if (!res.ok) {
+      const msg = parsed.data && parsed.data.detail ? String(parsed.data.detail) : ("HTTP " + res.status);
+      const err = new Error(msg);
+      err.status = res.status;
+      throw err;
+    }
+    return parsed.data;
+  }
+
+  async function apiPost(path, payload) {
+    const res = await fetch(apiUrl(path), {
+      method: "POST",
+      headers: authHeaders(true),
+      body: JSON.stringify(payload || {}),
+      credentials: "same-origin"
+    });
+    const parsed = await parseResponse(res);
+    debug("POST " + path, { status: res.status, body: parsed.data || parsed.txt, payload: payload || {} });
+    if (!res.ok) {
+      const msg = parsed.data && parsed.data.detail ? String(parsed.data.detail) : ("HTTP " + res.status);
+      const err = new Error(msg);
+      err.status = res.status;
+      throw err;
+    }
+    return parsed.data;
+  }
+
+  function getInjectedUser() {
+    const u = HB.currentUser || window.HB_USER || null;
+    if (!u) return null;
+    return {
+      wp_id: u.wp_user_id || u.id || u.user_id || null,
+      id: u.id || u.wp_user_id || u.user_id || null,
+      user_id: u.user_id || u.id || u.wp_user_id || null,
+      email: u.email || u.user_email || "",
+      name: u.displayName || u.display_name || u.name || "",
+      roles: Array.isArray(u.roles) ? u.roles : (u.roles ? [u.roles] : [])
+    };
+  }
+
+  function normalizeWpUser(wp) {
+    const roles = wp.roles || [];
+    return {
+      wp_id: wp.id,
+      id: wp.id,
+      user_id: wp.id,
+      email: wp.email || wp.user_email || "",
+      name: wp.name || wp.display_name || wp.slug || "",
+      roles: Array.isArray(roles) ? roles : [roles]
+    };
+  }
+
+  async function fetchWpMe() {
+    const urls = [
+      state.wpBase + "/wp-json/wp/v2/users/me?context=edit",
+      state.wpBase + "/wp-json/wp/v2/users/me"
+    ];
+
+    for (const url of urls) {
+      try {
+        const res = await fetch(url, { method: "GET", credentials: "include" });
+        const parsed = await parseResponse(res);
+        debug("WP me", { url, status: res.status, body: parsed.data || parsed.txt });
+        if (res.ok && parsed.data && parsed.data.id) return normalizeWpUser(parsed.data);
+      } catch (err) {
+        debug("WP me error", { url, error: String(err) });
+      }
+    }
+    return null;
+  }
+
+  async function ensureUser() {
+    state.user = getInjectedUser();
+    if (!state.user || !(state.user.wp_id || state.user.id || state.user.user_id)) {
+      const wpMe = await fetchWpMe();
+      if (wpMe) {
+        state.user = wpMe;
+        window.HB_USER = wpMe;
+      }
+    }
+
+    if (!state.user) {
+      if (el.who) el.who.textContent = "Invite";
+      throw new Error("Connecte-toi pour utiliser le wallet");
+    }
+
+    state.studentWpId = int(state.user.wp_id || state.user.id || state.user.user_id, null);
+    if (state.studentWpId == null) throw new Error("ID utilisateur introuvable");
+
+    state.roles = Array.isArray(state.user.roles) ? state.user.roles.map((x) => String(x || "").toLowerCase()) : [];
+
+    const display = state.user.name || state.user.email || ("User #" + state.studentWpId);
+    if (el.who) el.who.textContent = display;
+    if (el.role) el.role.textContent = state.roles.join(", ") || "-";
+
+    if (!isStudentLike()) {
+      throw new Error("Page wallet reservee aux eleves (ou admin)");
+    }
+  }
+
+  function readTopupTokenFromQuery() {
+    const q = new URLSearchParams(window.location.search);
+    const token = q.get("checkout_token") || q.get("token") || "";
+    return String(token || "").trim();
+  }
+
+  function clearPaymentQueryParams() {
+    const u = new URL(window.location.href);
+    ["checkout_token", "token", "PayerID", "payer_id", "paymentId", "cancel"].forEach((k) => u.searchParams.delete(k));
+    window.history.replaceState({}, "", u.pathname + (u.search ? u.search : "") + u.hash);
+  }
+
+  function amountToCents() {
+    const eurValue = int(el.amountEur ? el.amountEur.value : 0, 0);
+    return Math.max(Math.round(eurValue * 100), 0);
+  }
+
+  function updatePreview() {
+    const cents = amountToCents();
+    const points = Math.floor(cents / 100);
+    const provider = el.providerSelect ? el.providerSelect.value : "paypal";
+    if (el.provider) el.provider.textContent = provider;
+
+    if (!el.preview) return;
+    if (cents < 100) {
+      el.preview.textContent = "Montant minimum: 1 EUR (100 cents).";
+      return;
+    }
+
+    el.preview.textContent = "Tu vas payer " + eur(cents) + " et recevoir " + points + " points.";
+  }
+
+  function renderMetrics() {
+    const m = state.money;
+    if (!m) {
+      el.metrics.innerHTML = '<div class="hbw-empty">Aucune donnee.</div>';
+      return;
+    }
+
+    if (el.points) el.points.textContent = String(m.points_balance || 0);
+    if (el.deposited) el.deposited.textContent = eur(m.deposited_cents || 0);
+    if (el.spent) el.spent.textContent = eur(m.spent_cents || 0);
+
+    const rows = [
+      ["Points", String(m.points_balance || 0)],
+      ["Depose", eur(m.deposited_cents || 0)],
+      ["Depense", eur(m.spent_cents || 0)],
+      ["Rembourse", eur(m.refunded_cents || 0)],
+      ["Paiements valides", String(m.paid_transactions || 0)]
+    ];
+
+    el.metrics.innerHTML = rows.map((r) => {
+      return '<div class="hbw-item"><div class="hbw-item-left"><div class="hbw-item-title">' + esc(r[0]) + '</div></div><div class="hbw-item-right"><b>' + esc(r[1]) + '</b></div></div>';
+    }).join("");
+  }
+
+  function renderSubscriptions() {
+    const subs = state.subs || [];
+    if (!subs.length) {
+      el.subs.innerHTML = '<div class="hbw-empty">Aucun abonnement actif/visible.</div>';
+      return;
+    }
+
+    el.subs.innerHTML = subs.slice(0, 8).map((s) => {
+      const plan = (s.months || "-") + " mois • " + (s.sessions_per_month || "-") + " seances/mois";
+      const badgeClass = String(s.status || "").toLowerCase() === "active" ? "hbw-badge ok" : "hbw-badge";
+      return (
+        '<div class="hbw-item">' +
+          '<div class="hbw-item-left">' +
+            '<div class="hbw-item-title">' + esc(s.teacher_name || ("Prof #" + s.teacher_wp_id)) + '</div>' +
+            '<div class="hbw-item-sub">' + esc(plan) + ' • debut ' + esc(fmtDate(s.starts_at)) + '</div>' +
+          '</div>' +
+          '<div class="hbw-item-right"><span class="' + badgeClass + '">' + esc(s.status || "-") + '</span></div>' +
+        '</div>'
+      );
+    }).join("");
+  }
+
+  function renderTopups() {
+    const statusFilter = el.topupStatus ? el.topupStatus.value : "all";
+    let rows = state.topups.slice();
+    if (statusFilter !== "all") rows = rows.filter((x) => String(x.status || "").toLowerCase() === statusFilter);
+
+    if (!rows.length) {
+      el.topups.innerHTML = '<div class="hbw-empty">Aucun topup.</div>';
+      return;
+    }
+
+    el.topups.innerHTML = rows.map((tx) => {
+      const isPaid = String(tx.status || "").toLowerCase() === "paid";
+      const badgeClass = isPaid ? "hbw-badge ok" : "hbw-badge warn";
+
+      return (
+        '<div class="hbw-item">' +
+          '<div class="hbw-item-left">' +
+            '<div class="hbw-item-title">' + esc(eur(tx.amount_cents || 0)) + ' • ' + esc(String(tx.provider || "-").toUpperCase()) + '</div>' +
+            '<div class="hbw-item-sub">' + esc(fmtDate(tx.created_at)) + ' • token: ' + esc(tx.checkout_token || "-") + '</div>' +
+          '</div>' +
+          '<div class="hbw-item-right">' +
+            '<span class="' + badgeClass + '">' + esc(tx.status || "-") + '</span>' +
+            (!isPaid ? ('<button class="hbw-btn hbw-btn-ghost" data-confirm-token="' + esc(tx.checkout_token || "") + '" type="button">Confirmer</button>') : '') +
+          '</div>' +
+        '</div>'
+      );
+    }).join("");
+  }
+
+  function renderLedger() {
+    const mode = el.ledgerFilter ? el.ledgerFilter.value : "all";
+    let rows = state.ledger.slice();
+    if (mode !== "all") rows = rows.filter((x) => String(x.direction || "").toLowerCase() === mode);
+
+    if (!rows.length) {
+      el.ledger.innerHTML = '<div class="hbw-empty">Aucune ecriture wallet.</div>';
+      return;
+    }
+
+    el.ledger.innerHTML = rows.map((row) => {
+      const dir = String(row.direction || "").toLowerCase();
+      const badgeClass = dir === "credit" ? "hbw-badge ok" : "hbw-badge warn";
+      const sign = dir === "credit" ? "+" : "-";
+
+      return (
+        '<div class="hbw-item">' +
+          '<div class="hbw-item-left">' +
+            '<div class="hbw-item-title">' + esc(row.source || "wallet") + '</div>' +
+            '<div class="hbw-item-sub">' + esc(fmtDate(row.created_at)) + ' • ' + esc(row.note || "-") + '</div>' +
+          '</div>' +
+          '<div class="hbw-item-right">' +
+            '<span class="' + badgeClass + '">' + esc(dir || "-") + '</span>' +
+            '<span class="hbw-badge">' + esc(sign + Math.abs(int(row.points_delta, 0))) + ' pts</span>' +
+            '<span class="hbw-badge">' + esc(eur(row.amount_cents || 0)) + '</span>' +
+          '</div>' +
+        '</div>'
+      );
+    }).join("");
+  }
+
+  function renderPayments() {
+    const rows = state.payments || [];
+    if (!rows.length) {
+      el.payments.innerHTML = '<div class="hbw-empty">Aucun paiement abonnement.</div>';
+      return;
+    }
+
+    el.payments.innerHTML = rows.map((tx) => {
+      const paid = String(tx.status || "").toLowerCase() === "paid";
+      return (
+        '<div class="hbw-item">' +
+          '<div class="hbw-item-left">' +
+            '<div class="hbw-item-title">' + esc(eur(tx.amount_cents || 0)) + ' • ' + esc(String(tx.provider || "-").toUpperCase()) + '</div>' +
+            '<div class="hbw-item-sub">' + esc(fmtDate(tx.created_at)) + ' • checkout: ' + esc(tx.checkout_token || "-") + '</div>' +
+          '</div>' +
+          '<div class="hbw-item-right">' +
+            '<span class="hbw-badge ' + (paid ? 'ok' : 'warn') + '">' + esc(tx.status || "-") + '</span>' +
+            '<span class="hbw-badge">' + esc(tx.currency || "EUR") + '</span>' +
+          '</div>' +
+        '</div>'
+      );
+    }).join("");
+  }
+
+  function renderAll() {
+    renderMetrics();
+    renderSubscriptions();
+    renderTopups();
+    renderLedger();
+    renderPayments();
+    updatePreview();
+  }
+
+  function asList(data) {
+    if (Array.isArray(data)) return data;
+    if (data && Array.isArray(data.items)) return data.items;
+    return [];
+  }
+
+  async function confirmWalletTopup(token, silent404) {
+    const t = String(token || "").trim();
+    if (!t) {
+      toast("Token manquant");
+      return false;
+    }
+
+    try {
+      await apiPost("/students/" + encodeURIComponent(state.studentWpId) + "/wallet/topup/confirm", {
+        checkout_token: t
+      });
+      toast("Topup confirme avec succes");
+      return true;
+    } catch (err) {
+      if (silent404 && err && err.status === 404) return false;
+      toast(String(err && err.message ? err.message : err));
+      return false;
+    }
+  }
+
+  async function loadAll() {
+    setStatus("Chargement...");
+
+    try {
+      const studentId = state.studentWpId;
+      const [moneyR, subsR, topupsR, ledgerR, paymentsR] = await Promise.allSettled([
+        apiGet("/students/" + encodeURIComponent(studentId) + "/money"),
+        apiGet("/users/" + encodeURIComponent(studentId) + "/subscriptions"),
+        apiGet("/students/" + encodeURIComponent(studentId) + "/wallet/topup/transactions?limit=120"),
+        apiGet("/students/" + encodeURIComponent(studentId) + "/wallet/ledger?limit=250"),
+        apiGet("/payments/transactions")
+      ]);
+
+      if (moneyR.status !== "fulfilled") throw moneyR.reason;
+
+      state.money = moneyR.value || null;
+      state.subs = subsR.status === "fulfilled" ? asList(subsR.value) : [];
+      state.topups = topupsR.status === "fulfilled" ? asList(topupsR.value) : [];
+      state.ledger = ledgerR.status === "fulfilled" ? asList(ledgerR.value) : [];
+      state.payments = paymentsR.status === "fulfilled" ? asList(paymentsR.value) : [];
+
+      if (subsR.status !== "fulfilled" || topupsR.status !== "fulfilled" || ledgerR.status !== "fulfilled" || paymentsR.status !== "fulfilled") {
+        debug("wallet_partial_load", {
+          subs: subsR.status,
+          topups: topupsR.status,
+          ledger: ledgerR.status,
+          payments: paymentsR.status
+        });
+      }
+
+      renderAll();
+      setStatus("Pret");
+    } catch (err) {
+      console.error(err);
+      setStatus("Erreur");
+      toast(String(err && err.message ? err.message : err));
+    }
+  }
+
+  async function startTopup() {
+    const cents = amountToCents();
+    if (cents < 100) {
+      toast("Montant minimum: 1 EUR");
+      return;
+    }
+
+    const provider = el.providerSelect ? String(el.providerSelect.value || "paypal") : "paypal";
+    const basePage = window.location.origin + window.location.pathname;
+
+    el.topupBtn.disabled = true;
+    try {
+      const data = await apiPost("/students/" + encodeURIComponent(state.studentWpId) + "/wallet/topup/checkout", {
+        amount_cents: cents,
+        provider,
+        success_url: basePage,
+        cancel_url: basePage + "?cancel=1"
+      });
+
+      if (!data || !data.checkout_url) throw new Error("checkout_url manquant");
+      window.location.href = data.checkout_url;
+    } catch (err) {
+      console.error(err);
+      toast(String(err && err.message ? err.message : err));
+      el.topupBtn.disabled = false;
+    }
+  }
+
+  function bindEvents() {
+    root.addEventListener("click", async (ev) => {
+      const quick = ev.target.closest("[data-eur]");
+      if (quick) {
+        if (el.amountEur) el.amountEur.value = String(quick.getAttribute("data-eur") || "20");
+        updatePreview();
+        return;
+      }
+
+      const confirmBtn = ev.target.closest("[data-confirm-token]");
+      if (confirmBtn) {
+        const token = confirmBtn.getAttribute("data-confirm-token") || "";
+        confirmBtn.disabled = true;
+        const ok = await confirmWalletTopup(token, false);
+        if (ok) await loadAll();
+        else confirmBtn.disabled = false;
+      }
+    });
+
+    if (el.amountEur) el.amountEur.addEventListener("input", updatePreview);
+    if (el.providerSelect) {
+      el.providerSelect.addEventListener("change", () => {
+        if (el.provider) el.provider.textContent = el.providerSelect.value;
+        updatePreview();
+      });
+    }
+
+    if (el.topupBtn) el.topupBtn.addEventListener("click", startTopup);
+    if (el.refreshBtn) el.refreshBtn.addEventListener("click", loadAll);
+
+    if (el.confirmBtn) {
+      el.confirmBtn.addEventListener("click", async () => {
+        const token = el.confirmToken ? el.confirmToken.value : "";
+        const ok = await confirmWalletTopup(token, false);
+        if (ok) {
+          if (el.confirmToken) el.confirmToken.value = "";
+          await loadAll();
+        }
+      });
+    }
+
+    if (el.topupStatus) el.topupStatus.addEventListener("change", renderTopups);
+    if (el.ledgerFilter) el.ledgerFilter.addEventListener("change", renderLedger);
+  }
+
+  async function autoConfirmFromReturnUrl() {
+    const q = new URLSearchParams(window.location.search);
+    if (q.get("cancel") === "1") {
+      toast("Paiement annule.");
+      clearPaymentQueryParams();
+      return;
+    }
+
+    const token = readTopupTokenFromQuery();
+    if (!token) return;
+
+    const ok = await confirmWalletTopup(token, true);
+    if (ok) {
+      clearPaymentQueryParams();
+      if (el.confirmToken) el.confirmToken.value = "";
+    }
+  }
+
+  async function boot() {
+    try {
+      setStatus("Initialisation...");
+      bindEvents();
+      await ensureUser();
+      await autoConfirmFromReturnUrl();
+      await loadAll();
+    } catch (err) {
+      console.error(err);
+      setStatus("Erreur");
+      toast(String(err && err.message ? err.message : err));
+    }
+  }
+
+  boot();
+})();
+</script>

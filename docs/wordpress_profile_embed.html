@@ -1,0 +1,665 @@
+<div id="hb-profile-page" class="hbp" data-api-base="" data-messages-url="/messages/" data-notifications-url="/notifications/">
+  <header class="hbp-hero">
+    <div class="hbp-user">
+      <div class="hbp-avatar-wrap">
+        <img id="hbp-avatar" src="" alt="Avatar" />
+      </div>
+      <div>
+        <h1 id="hbp-name">Profil</h1>
+        <p id="hbp-meta" class="hbp-muted">Chargement...</p>
+        <div class="hbp-chips">
+          <span class="hbp-chip">API: <b id="hbp-api">-</b></span>
+          <span class="hbp-chip">Etat: <b id="hbp-state">Pret</b></span>
+        </div>
+      </div>
+    </div>
+    <div class="hbp-actions">
+      <a id="hbp-go-messages" class="hbp-btn" href="/messages/">Messages</a>
+      <a id="hbp-go-notifs" class="hbp-btn hbp-btn-primary" href="/notifications/">Notifications</a>
+    </div>
+  </header>
+
+  <div id="hbp-alert" class="hbp-alert" style="display:none"></div>
+
+  <section class="hbp-grid">
+    <article class="hbp-card">
+      <div class="hbp-card-head">
+        <h2>Infos profil</h2>
+        <p>Met a jour ton bio, avatar, interets et localisation.</p>
+      </div>
+      <div class="hbp-card-body">
+        <form id="hbp-profile-form" class="hbp-form" autocomplete="off">
+          <label class="hbp-field">
+            <span>Avatar URL</span>
+            <input id="hbp-avatar-url" type="url" placeholder="https://..." />
+          </label>
+
+          <label class="hbp-field">
+            <span>Localisation</span>
+            <input id="hbp-location" type="text" maxlength="255" placeholder="Ville, pays" />
+          </label>
+
+          <label class="hbp-field">
+            <span>Interets (separes par virgule)</span>
+            <input id="hbp-interests" type="text" placeholder="Lecture, Maths, Physique" />
+          </label>
+
+          <label class="hbp-field">
+            <span>Bio</span>
+            <textarea id="hbp-bio" maxlength="800" rows="5" placeholder="Presente-toi..."></textarea>
+          </label>
+
+          <div class="hbp-row">
+            <button id="hbp-save-profile" class="hbp-btn hbp-btn-primary" type="submit">Enregistrer profil</button>
+          </div>
+        </form>
+      </div>
+    </article>
+
+    <aside class="hbp-side">
+      <article class="hbp-card">
+        <div class="hbp-card-head">
+          <h2>Confidentialite</h2>
+          <p>Controle la visibilite et la messagerie.</p>
+        </div>
+        <div class="hbp-card-body">
+          <form id="hbp-privacy-form" class="hbp-form" autocomplete="off">
+            <label class="hbp-field">
+              <span>Visibilite profil</span>
+              <select id="hbp-visibility">
+                <option value="public">Public</option>
+                <option value="members">Membres</option>
+                <option value="private">Prive</option>
+              </select>
+            </label>
+
+            <label class="hbp-field">
+              <span>Qui peut me contacter</span>
+              <select id="hbp-message-permission">
+                <option value="everyone">Tout le monde</option>
+                <option value="friends">Amis uniquement</option>
+                <option value="none">Personne</option>
+              </select>
+            </label>
+
+            <label class="hbp-check">
+              <input id="hbp-searchable" type="checkbox" />
+              <span>Apparaître dans la recherche</span>
+            </label>
+
+            <div class="hbp-row">
+              <button id="hbp-save-privacy" class="hbp-btn" type="submit">Enregistrer confidentialite</button>
+            </div>
+          </form>
+        </div>
+      </article>
+
+      <article class="hbp-card">
+        <div class="hbp-card-head">
+          <h2>Social</h2>
+          <p>Vue rapide des relations.</p>
+        </div>
+        <div class="hbp-card-body">
+          <div class="hbp-kv"><span>Amis</span><b id="hbp-stat-friends">0</b></div>
+          <div class="hbp-kv"><span>Demandes recues</span><b id="hbp-stat-incoming">0</b></div>
+          <div class="hbp-kv"><span>Demandes envoyees</span><b id="hbp-stat-outgoing">0</b></div>
+        </div>
+      </article>
+    </aside>
+  </section>
+</div>
+
+<style>
+  #hb-profile-page.hbp {
+    --bg: #f4f8ff;
+    --card: #ffffff;
+    --text: #10243d;
+    --muted: #5f7085;
+    --stroke: #d7e4f6;
+    --navy: #0f3d69;
+    --navy2: #1c5d98;
+    font-family: "DM Sans", "Segoe UI", system-ui, sans-serif;
+    color: var(--text);
+    background:
+      radial-gradient(920px 410px at -10% -30%, rgba(28, 93, 152, 0.16), transparent 60%),
+      radial-gradient(920px 360px at 110% -20%, rgba(15, 61, 105, 0.14), transparent 58%),
+      var(--bg);
+    border: 1px solid var(--stroke);
+    border-radius: 22px;
+    padding: 18px;
+    box-shadow: 0 20px 54px rgba(15, 33, 58, 0.09);
+  }
+
+  #hb-profile-page * { box-sizing: border-box; }
+
+  #hb-profile-page .hbp-hero {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+  }
+
+  #hb-profile-page .hbp-user {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+  }
+
+  #hb-profile-page .hbp-avatar-wrap {
+    width: 62px;
+    height: 62px;
+    border-radius: 999px;
+    border: 2px solid #c8daf1;
+    background: #fff;
+    overflow: hidden;
+    flex: 0 0 auto;
+  }
+
+  #hb-profile-page .hbp-avatar-wrap img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  #hb-profile-page h1 {
+    margin: 0;
+    font-size: clamp(24px, 4vw, 34px);
+    letter-spacing: -0.03em;
+    color: var(--navy);
+    line-height: 1.05;
+  }
+
+  #hb-profile-page .hbp-muted {
+    margin: 8px 0 0;
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  #hb-profile-page .hbp-chips {
+    margin-top: 10px;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  #hb-profile-page .hbp-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px solid var(--stroke);
+    border-radius: 999px;
+    background: #fff;
+    padding: 7px 10px;
+    font-size: 12px;
+    color: var(--muted);
+    font-weight: 700;
+  }
+
+  #hb-profile-page .hbp-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  #hb-profile-page .hbp-btn {
+    border: 1px solid #c8daef;
+    border-radius: 12px;
+    background: #f3f8ff;
+    color: var(--navy);
+    font-size: 13px;
+    font-weight: 800;
+    cursor: pointer;
+    padding: 10px 12px;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+  }
+
+  #hb-profile-page .hbp-btn-primary {
+    color: #fff;
+    border-color: rgba(15, 61, 105, 0.45);
+    background: linear-gradient(180deg, var(--navy2), var(--navy));
+  }
+
+  #hb-profile-page .hbp-alert {
+    margin-bottom: 10px;
+    border-radius: 10px;
+    border: 1px solid #efb6b6;
+    background: #fff2f2;
+    color: #7f1d1d;
+    font-size: 12px;
+    padding: 9px 10px;
+  }
+
+  #hb-profile-page .hbp-grid {
+    display: grid;
+    grid-template-columns: 1.2fr 0.8fr;
+    gap: 12px;
+    align-items: start;
+  }
+
+  #hb-profile-page .hbp-side {
+    display: grid;
+    gap: 12px;
+  }
+
+  #hb-profile-page .hbp-card {
+    border: 1px solid var(--stroke);
+    border-radius: 18px;
+    background: var(--card);
+    box-shadow: 0 12px 34px rgba(15, 33, 58, 0.08);
+    overflow: hidden;
+  }
+
+  #hb-profile-page .hbp-card-head {
+    padding: 14px;
+    border-bottom: 1px solid var(--stroke);
+    background: linear-gradient(180deg, #fff, #f9fcff);
+  }
+
+  #hb-profile-page .hbp-card-head h2 {
+    margin: 0;
+    font-size: 16px;
+    color: var(--navy);
+  }
+
+  #hb-profile-page .hbp-card-head p {
+    margin: 6px 0 0;
+    color: var(--muted);
+    font-size: 12px;
+  }
+
+  #hb-profile-page .hbp-card-body { padding: 14px; }
+
+  #hb-profile-page .hbp-form {
+    display: grid;
+    gap: 10px;
+  }
+
+  #hb-profile-page .hbp-field {
+    display: grid;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--navy);
+    font-weight: 700;
+  }
+
+  #hb-profile-page .hbp-field input,
+  #hb-profile-page .hbp-field textarea,
+  #hb-profile-page .hbp-field select {
+    width: 100%;
+    border: 1px solid #c6d9ef;
+    border-radius: 10px;
+    background: #fff;
+    padding: 10px 11px;
+    font-size: 14px;
+    color: var(--text);
+    outline: none;
+  }
+
+  #hb-profile-page .hbp-field input:focus,
+  #hb-profile-page .hbp-field textarea:focus,
+  #hb-profile-page .hbp-field select:focus {
+    border-color: #2a6ba8;
+    box-shadow: 0 0 0 4px rgba(26, 86, 143, 0.16);
+  }
+
+  #hb-profile-page .hbp-check {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  #hb-profile-page .hbp-row {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+
+  #hb-profile-page .hbp-kv {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 10px;
+    border: 1px solid #d5e4f7;
+    border-radius: 10px;
+    background: #fbfdff;
+    margin-bottom: 8px;
+  }
+
+  #hb-profile-page .hbp-kv span {
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  #hb-profile-page .hbp-kv b {
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 800;
+  }
+
+  @media (max-width: 980px) {
+    #hb-profile-page .hbp-grid { grid-template-columns: 1fr; }
+  }
+</style>
+
+<script>
+(() => {
+  if (window.__HB_PROFILE_PAGE_INIT__) return;
+  window.__HB_PROFILE_PAGE_INIT__ = true;
+
+  const root = document.getElementById("hb-profile-page");
+  if (!root) return;
+
+  const HB = window.HB_CONFIG || {};
+
+  const elApi = root.querySelector("#hbp-api");
+  const elState = root.querySelector("#hbp-state");
+  const elAlert = root.querySelector("#hbp-alert");
+  const elName = root.querySelector("#hbp-name");
+  const elMeta = root.querySelector("#hbp-meta");
+  const elAvatar = root.querySelector("#hbp-avatar");
+
+  const elAvatarUrl = root.querySelector("#hbp-avatar-url");
+  const elLocation = root.querySelector("#hbp-location");
+  const elInterests = root.querySelector("#hbp-interests");
+  const elBio = root.querySelector("#hbp-bio");
+
+  const elVisibility = root.querySelector("#hbp-visibility");
+  const elMessagePermission = root.querySelector("#hbp-message-permission");
+  const elSearchable = root.querySelector("#hbp-searchable");
+
+  const elStatFriends = root.querySelector("#hbp-stat-friends");
+  const elStatIncoming = root.querySelector("#hbp-stat-incoming");
+  const elStatOutgoing = root.querySelector("#hbp-stat-outgoing");
+
+  const formProfile = root.querySelector("#hbp-profile-form");
+  const formPrivacy = root.querySelector("#hbp-privacy-form");
+
+  const goMessages = root.querySelector("#hbp-go-messages");
+  const goNotifs = root.querySelector("#hbp-go-notifs");
+  goMessages.href = String(root.getAttribute("data-messages-url") || "/messages/").trim();
+  goNotifs.href = String(root.getAttribute("data-notifications-url") || "/notifications/").trim();
+
+  const state = {
+    user: null,
+    profile: null,
+    privacy: null,
+  };
+
+  function normalizeBase(v) {
+    return String(v || "").trim().replace(/\/+$/, "");
+  }
+
+  function normalizeApiBase(raw) {
+    const b = normalizeBase(raw);
+    if (!b) return "/api/v1";
+    if (/\/api\/v1$/i.test(b)) return b;
+    if (/\/api$/i.test(b)) return b + "/v1";
+    if (/^https?:\/\//i.test(b) || b.startsWith("/")) return b + "/api/v1";
+    return "/api/v1";
+  }
+
+  const API_BASE = normalizeApiBase(HB.apiBase || root.getAttribute("data-api-base") || "");
+  if (elApi) elApi.textContent = API_BASE.replace(/^https?:\/\//, "");
+
+  function setState(text) {
+    if (elState) elState.textContent = text || "Pret";
+  }
+
+  function showAlert(msg, kind) {
+    if (!msg) {
+      elAlert.style.display = "none";
+      elAlert.textContent = "";
+      return;
+    }
+    elAlert.textContent = String(msg);
+    elAlert.style.display = "block";
+    if (kind === "ok") {
+      elAlert.style.borderColor = "#b7ebd8";
+      elAlert.style.background = "#f0fff7";
+      elAlert.style.color = "#0d6b4c";
+    } else {
+      elAlert.style.borderColor = "#efb6b6";
+      elAlert.style.background = "#fff2f2";
+      elAlert.style.color = "#7f1d1d";
+    }
+  }
+
+  function token() {
+    return String(HB.token || "").trim();
+  }
+
+  function getInjectedUser() {
+    const u = HB.currentUser || window.HB_USER || null;
+    if (!u) return null;
+    return {
+      wp_id: u.wp_user_id || u.id || u.user_id || null,
+      id: u.id || u.wp_user_id || u.user_id || null,
+      user_id: u.user_id || u.id || u.wp_user_id || null,
+      email: u.email || u.user_email || "",
+      name: u.displayName || u.display_name || u.name || "",
+      roles: Array.isArray(u.roles) ? u.roles : [],
+    };
+  }
+
+  function rolesList() {
+    const raw = (state.user && (state.user.roles || state.user.role)) || [];
+    return (Array.isArray(raw) ? raw : [raw]).map((x) => String(x || "").toLowerCase()).filter(Boolean);
+  }
+
+  function headers(withJson) {
+    const h = { Accept: "application/json" };
+    if (withJson) h["Content-Type"] = "application/json";
+
+    const t = token();
+    if (t) h["Authorization"] = "Bearer " + t;
+
+    if (state.user) {
+      const wpId = state.user.wp_id || state.user.id || state.user.user_id;
+      if (wpId != null) h["X-WP-User-Id"] = String(wpId);
+      if (state.user.email) h["X-User-Email"] = String(state.user.email);
+      const roles = rolesList();
+      if (roles.length) h["X-WP-User-Roles"] = roles.join(",");
+    }
+
+    return h;
+  }
+
+  function parseJsonSafe(txt) {
+    try { return txt ? JSON.parse(txt) : null; } catch (_e) { return null; }
+  }
+
+  function apiUrl(path) {
+    return API_BASE + (path.startsWith("/") ? path : "/" + path);
+  }
+
+  async function apiGet(path) {
+    const res = await fetch(apiUrl(path), {
+      method: "GET",
+      headers: headers(false),
+      credentials: "same-origin",
+    });
+    const txt = await res.text().catch(() => "");
+    const data = parseJsonSafe(txt);
+    if (!res.ok) {
+      throw new Error((data && data.detail) ? data.detail : ("HTTP " + res.status));
+    }
+    return data;
+  }
+
+  async function apiPatch(path, payload) {
+    const res = await fetch(apiUrl(path), {
+      method: "PATCH",
+      headers: headers(true),
+      credentials: "same-origin",
+      body: JSON.stringify(payload || {}),
+    });
+    const txt = await res.text().catch(() => "");
+    const data = parseJsonSafe(txt);
+    if (!res.ok) {
+      throw new Error((data && data.detail) ? data.detail : ("HTTP " + res.status));
+    }
+    return data;
+  }
+
+  function fallbackAvatar() {
+    return "https://secure.gravatar.com/avatar/?s=96&d=mp&r=g";
+  }
+
+  function roleLabel(roles) {
+    const set = new Set((Array.isArray(roles) ? roles : []).map((x) => String(x || "").toLowerCase()));
+    if (set.has("administrator")) return "Admin";
+    if (set.has("prof") || set.has("teacher") || set.has("instructor")) return "Prof";
+    if (set.has("student")) return "Eleve";
+    return "Membre";
+  }
+
+  function applyIdentity() {
+    if (!state.user) return;
+    const display = state.user.name || ("User #" + (state.user.wp_id || ""));
+    const role = roleLabel(state.user.roles);
+    elName.textContent = display;
+    elMeta.textContent = role + " - WP#" + String(state.user.wp_id || "") + (state.user.email ? (" - " + state.user.email) : "");
+
+    const profileAvatar = state.profile && state.profile.avatar_url ? String(state.profile.avatar_url).trim() : "";
+    elAvatar.src = profileAvatar || fallbackAvatar();
+  }
+
+  function applyProfileForm() {
+    const p = state.profile || {};
+    elAvatarUrl.value = p.avatar_url || "";
+    elLocation.value = p.location || "";
+    elBio.value = p.bio || "";
+    elInterests.value = Array.isArray(p.interests) ? p.interests.join(", ") : "";
+  }
+
+  function applyPrivacyForm() {
+    const p = state.privacy || {};
+    elVisibility.value = p.profile_visibility || "public";
+    elMessagePermission.value = p.message_permission || "friends";
+    elSearchable.checked = Boolean(p.searchable);
+  }
+
+  function applyStats(stats) {
+    elStatFriends.textContent = String(stats.friends || 0);
+    elStatIncoming.textContent = String(stats.incoming || 0);
+    elStatOutgoing.textContent = String(stats.outgoing || 0);
+  }
+
+  async function loadAll() {
+    if (!state.user) {
+      showAlert("HB_CONFIG/HB_USER introuvable.");
+      setState("Non connecte");
+      return;
+    }
+
+    setState("Chargement...");
+    try {
+      const [profile, privacy, friends, incoming, outgoing] = await Promise.all([
+        apiGet("/profiles/me"),
+        apiGet("/settings/privacy"),
+        apiGet("/friends").catch(() => []),
+        apiGet("/friends/requests/incoming").catch(() => []),
+        apiGet("/friends/requests/outgoing").catch(() => []),
+      ]);
+
+      state.profile = profile || {};
+      state.privacy = privacy || {};
+
+      applyIdentity();
+      applyProfileForm();
+      applyPrivacyForm();
+      applyStats({
+        friends: Array.isArray(friends) ? friends.length : 0,
+        incoming: Array.isArray(incoming) ? incoming.length : 0,
+        outgoing: Array.isArray(outgoing) ? outgoing.length : 0,
+      });
+
+      showAlert("");
+      setState("Pret");
+    } catch (e) {
+      showAlert(String(e && e.message ? e.message : e));
+      setState("Erreur");
+    }
+  }
+
+  async function saveProfile(ev) {
+    ev.preventDefault();
+    setState("Enregistrement...");
+    try {
+      const interests = String(elInterests.value || "")
+        .split(",")
+        .map((x) => x.trim())
+        .filter(Boolean)
+        .slice(0, 30);
+
+      const payload = {
+        avatar_url: String(elAvatarUrl.value || "").trim() || null,
+        location: String(elLocation.value || "").trim() || null,
+        bio: String(elBio.value || "").trim() || null,
+        interests,
+      };
+
+      state.profile = await apiPatch("/profiles/me", payload);
+      applyIdentity();
+      applyProfileForm();
+      showAlert("Profil enregistre.", "ok");
+      setState("Pret");
+    } catch (e) {
+      showAlert(String(e && e.message ? e.message : e));
+      setState("Erreur");
+    }
+  }
+
+  async function savePrivacy(ev) {
+    ev.preventDefault();
+    setState("Enregistrement...");
+    try {
+      const payload = {
+        profile_visibility: String(elVisibility.value || "public"),
+        message_permission: String(elMessagePermission.value || "friends"),
+        searchable: Boolean(elSearchable.checked),
+      };
+
+      state.privacy = await apiPatch("/settings/privacy", payload);
+      applyPrivacyForm();
+      showAlert("Confidentialite enregistree.", "ok");
+      setState("Pret");
+    } catch (e) {
+      showAlert(String(e && e.message ? e.message : e));
+      setState("Erreur");
+    }
+  }
+
+  function bindEvents() {
+    formProfile.addEventListener("submit", saveProfile);
+    formPrivacy.addEventListener("submit", savePrivacy);
+    elAvatarUrl.addEventListener("input", () => {
+      const v = String(elAvatarUrl.value || "").trim();
+      elAvatar.src = v || fallbackAvatar();
+    });
+  }
+
+  async function boot() {
+    state.user = getInjectedUser();
+    bindEvents();
+    applyIdentity();
+    await loadAll();
+  }
+
+  boot();
+})();
+</script>

@@ -1,0 +1,671 @@
+<div id="hb-payment-cancel" class="hbpc" data-api-base="" data-wallet-url="/wallet/" data-ok-url="/paiement-ok/" data-help-url="/aide-support/">
+  <header class="hbpc-hero">
+    <div>
+      <h1>Paiement annule</h1>
+      <p class="hbpc-muted">Aucun debit final tant que le paiement n'est pas capture. Tu peux relancer proprement depuis le wallet.</p>
+      <div class="hbpc-chips">
+        <span class="hbpc-chip">API: <b id="hbpc-api">-</b></span>
+        <span class="hbpc-chip">Token: <b id="hbpc-token-chip">-</b></span>
+        <span class="hbpc-chip">Etat: <b id="hbpc-state">Initialisation</b></span>
+      </div>
+    </div>
+    <div class="hbpc-actions">
+      <a id="hbpc-go-wallet" class="hbpc-btn hbpc-btn-primary" href="/wallet/">Retour wallet</a>
+      <a id="hbpc-go-ok" class="hbpc-btn" href="/paiement-ok/">Verifier paiement</a>
+      <a id="hbpc-go-help" class="hbpc-btn" href="/aide-support/">Support</a>
+    </div>
+  </header>
+
+  <div id="hbpc-alert" class="hbpc-alert" style="display:none"></div>
+
+  <section class="hbpc-grid">
+    <article class="hbpc-card">
+      <div class="hbpc-card-head">
+        <h2>Informations retour</h2>
+        <p id="hbpc-status-line">Lecture des parametres...</p>
+      </div>
+      <div class="hbpc-card-body">
+        <div class="hbpc-kv"><span>Token detecte</span><b id="hbpc-token">-</b></div>
+        <div class="hbpc-kv"><span>Raison</span><b id="hbpc-reason">-</b></div>
+        <div class="hbpc-kv"><span>Provider message</span><b id="hbpc-provider-msg">-</b></div>
+        <div class="hbpc-kv"><span>Derniere verification</span><b id="hbpc-checked-at">-</b></div>
+
+        <div class="hbpc-sep"></div>
+
+        <div class="hbpc-step is-done" id="hbpc-step-return">
+          <b>1. Retour annule recu</b>
+          <small id="hbpc-step-return-text">OK</small>
+        </div>
+        <div class="hbpc-step" id="hbpc-step-diagnostic">
+          <b>2. Diagnostic transaction</b>
+          <small id="hbpc-step-diagnostic-text">En attente...</small>
+        </div>
+        <div class="hbpc-step" id="hbpc-step-next">
+          <b>3. Action recommandee</b>
+          <small id="hbpc-step-next-text">En attente...</small>
+        </div>
+      </div>
+    </article>
+
+    <article class="hbpc-card">
+      <div class="hbpc-card-head">
+        <h2>Diagnostic checkout</h2>
+        <p>Controle automatique pour eviter les faux annules.</p>
+      </div>
+      <div class="hbpc-card-body">
+        <div class="hbpc-kv"><span>Subscription tx</span><b id="hbpc-subtx">-</b></div>
+        <div class="hbpc-kv"><span>Wallet tx</span><b id="hbpc-wallettx">-</b></div>
+        <div class="hbpc-kv"><span>Statut final</span><b id="hbpc-final">-</b></div>
+
+        <div class="hbpc-note" id="hbpc-note">
+          Si tu vois "paid" ici, le provider a capture apres redirection. Ouvre la page paiement-ok avec ce token pour finaliser l'activation backend.
+        </div>
+
+        <div class="hbpc-row" style="margin-top:10px;">
+          <button id="hbpc-recheck" class="hbpc-btn" type="button">Reverifier maintenant</button>
+          <button id="hbpc-open-ok-with-token" class="hbpc-btn hbpc-btn-primary" type="button">Ouvrir paiement-ok avec token</button>
+        </div>
+      </div>
+    </article>
+
+    <article class="hbpc-card">
+      <div class="hbpc-card-head">
+        <h2>Journal technique</h2>
+        <p>Pour le support en cas de litige.</p>
+      </div>
+      <div class="hbpc-card-body">
+        <div id="hbpc-tech" class="hbpc-tech">
+          <div class="hbpc-empty">Aucune donnee pour le moment.</div>
+        </div>
+      </div>
+    </article>
+  </section>
+</div>
+
+<style>
+  #hb-payment-cancel.hbpc {
+    --bg: #f4f8ff;
+    --card: #ffffff;
+    --text: #10243d;
+    --muted: #5f7086;
+    --stroke: #d8e3f3;
+    --navy: #0f3d69;
+    --navy2: #1d5d95;
+    --warn: #b45309;
+    --danger: #b91c1c;
+    font-family: "DM Sans", "Segoe UI", system-ui, sans-serif;
+    color: var(--text);
+    background:
+      radial-gradient(900px 390px at -10% -30%, rgba(29, 93, 149, 0.18), transparent 60%),
+      radial-gradient(900px 320px at 108% -18%, rgba(15, 61, 105, 0.12), transparent 58%),
+      var(--bg);
+    border: 1px solid var(--stroke);
+    border-radius: 22px;
+    padding: 18px;
+    box-shadow: 0 22px 56px rgba(12, 31, 56, 0.1);
+  }
+
+  #hb-payment-cancel * { box-sizing: border-box; }
+
+  #hb-payment-cancel .hbpc-hero {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+  }
+
+  #hb-payment-cancel h1 {
+    margin: 0;
+    font-size: clamp(24px, 4vw, 34px);
+    line-height: 1.06;
+    letter-spacing: -0.03em;
+    color: var(--navy);
+  }
+
+  #hb-payment-cancel .hbpc-muted {
+    margin: 8px 0 0;
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  #hb-payment-cancel .hbpc-chips {
+    margin-top: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  #hb-payment-cancel .hbpc-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px solid var(--stroke);
+    border-radius: 999px;
+    background: #fff;
+    padding: 7px 10px;
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  #hb-payment-cancel .hbpc-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  #hb-payment-cancel .hbpc-btn {
+    border: 1px solid #c7d8ed;
+    border-radius: 12px;
+    background: #f4f9ff;
+    color: var(--navy);
+    font-size: 13px;
+    font-weight: 800;
+    cursor: pointer;
+    padding: 10px 12px;
+    text-decoration: none;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  #hb-payment-cancel .hbpc-btn:hover { filter: brightness(0.98); }
+
+  #hb-payment-cancel .hbpc-btn-primary {
+    color: #fff;
+    border-color: rgba(15, 61, 105, 0.45);
+    background: linear-gradient(180deg, var(--navy2), var(--navy));
+  }
+
+  #hb-payment-cancel .hbpc-alert {
+    margin-bottom: 12px;
+    border: 1px solid #f2c18a;
+    border-radius: 12px;
+    background: #fff7ed;
+    color: #92400e;
+    font-size: 13px;
+    padding: 10px 11px;
+  }
+
+  #hb-payment-cancel .hbpc-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    align-items: start;
+  }
+
+  #hb-payment-cancel .hbpc-card {
+    border: 1px solid var(--stroke);
+    border-radius: 18px;
+    background: var(--card);
+    box-shadow: 0 12px 32px rgba(13, 32, 58, 0.08);
+    overflow: hidden;
+  }
+
+  #hb-payment-cancel .hbpc-card-head {
+    padding: 14px;
+    border-bottom: 1px solid var(--stroke);
+    background: linear-gradient(180deg, #fff, #f9fcff);
+  }
+
+  #hb-payment-cancel .hbpc-card-head h2 {
+    margin: 0;
+    font-size: 16px;
+    color: var(--navy);
+  }
+
+  #hb-payment-cancel .hbpc-card-head p {
+    margin: 6px 0 0;
+    color: var(--muted);
+    font-size: 12px;
+  }
+
+  #hb-payment-cancel .hbpc-card-body { padding: 14px; }
+
+  #hb-payment-cancel .hbpc-kv {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 10px;
+    border-bottom: 1px dashed #d8e2f2;
+    padding: 8px 0;
+    font-size: 13px;
+  }
+
+  #hb-payment-cancel .hbpc-kv:last-child { border-bottom: 0; }
+
+  #hb-payment-cancel .hbpc-kv span {
+    color: var(--muted);
+    font-weight: 700;
+  }
+
+  #hb-payment-cancel .hbpc-kv b {
+    color: var(--text);
+    font-weight: 800;
+    text-align: right;
+  }
+
+  #hb-payment-cancel .hbpc-sep {
+    height: 1px;
+    background: #d8e3f3;
+    margin: 12px 0;
+  }
+
+  #hb-payment-cancel .hbpc-step {
+    border: 1px solid #d6e1f1;
+    border-radius: 12px;
+    background: #fbfdff;
+    padding: 8px 9px;
+    margin-top: 8px;
+    display: grid;
+    gap: 3px;
+  }
+
+  #hb-payment-cancel .hbpc-step small {
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.45;
+  }
+
+  #hb-payment-cancel .hbpc-step.is-done {
+    border-color: rgba(15, 141, 99, .28);
+    background: rgba(15, 141, 99, .06);
+  }
+
+  #hb-payment-cancel .hbpc-step.is-error {
+    border-color: rgba(185, 28, 28, .24);
+    background: rgba(185, 28, 28, .06);
+  }
+
+  #hb-payment-cancel .hbpc-note {
+    margin-top: 12px;
+    border: 1px dashed #d5e0f0;
+    border-radius: 12px;
+    padding: 10px;
+    background: #fff;
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.5;
+  }
+
+  #hb-payment-cancel .hbpc-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  #hb-payment-cancel .hbpc-tech {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 360px;
+    overflow: auto;
+  }
+
+  #hb-payment-cancel .hbpc-tech-item {
+    border: 1px solid #d8e2f3;
+    border-radius: 11px;
+    background: #f8fbff;
+    padding: 8px 9px;
+    font-size: 12px;
+    line-height: 1.45;
+  }
+
+  #hb-payment-cancel .hbpc-tech-item b { color: var(--navy); }
+  #hb-payment-cancel .hbpc-tech-item small { color: var(--muted); }
+
+  #hb-payment-cancel .hbpc-empty {
+    border: 1px dashed #d5e0f0;
+    border-radius: 12px;
+    padding: 10px;
+    background: #fff;
+    color: var(--muted);
+    font-size: 12px;
+  }
+
+  @media (max-width: 1080px) {
+    #hb-payment-cancel .hbpc-grid { grid-template-columns: 1fr; }
+  }
+</style>
+
+<script>
+(() => {
+  if (window.__HB_PAY_CANCEL_INIT__) return;
+  window.__HB_PAY_CANCEL_INIT__ = true;
+
+  const root = document.getElementById("hb-payment-cancel");
+  if (!root) return;
+
+  const HB = window.HB_CONFIG || {};
+  const params = new URLSearchParams(window.location.search || "");
+
+  const elApi = document.getElementById("hbpc-api");
+  const elTokenChip = document.getElementById("hbpc-token-chip");
+  const elState = document.getElementById("hbpc-state");
+  const elAlert = document.getElementById("hbpc-alert");
+  const elStatusLine = document.getElementById("hbpc-status-line");
+  const elToken = document.getElementById("hbpc-token");
+  const elReason = document.getElementById("hbpc-reason");
+  const elProviderMsg = document.getElementById("hbpc-provider-msg");
+  const elCheckedAt = document.getElementById("hbpc-checked-at");
+  const elStepDiagnostic = document.getElementById("hbpc-step-diagnostic");
+  const elStepDiagnosticText = document.getElementById("hbpc-step-diagnostic-text");
+  const elStepNext = document.getElementById("hbpc-step-next");
+  const elStepNextText = document.getElementById("hbpc-step-next-text");
+  const elSubtx = document.getElementById("hbpc-subtx");
+  const elWallettx = document.getElementById("hbpc-wallettx");
+  const elFinal = document.getElementById("hbpc-final");
+  const elNote = document.getElementById("hbpc-note");
+  const elTech = document.getElementById("hbpc-tech");
+  const elRecheck = document.getElementById("hbpc-recheck");
+  const elOpenOkWithToken = document.getElementById("hbpc-open-ok-with-token");
+  const elGoWallet = document.getElementById("hbpc-go-wallet");
+  const elGoOk = document.getElementById("hbpc-go-ok");
+  const elGoHelp = document.getElementById("hbpc-go-help");
+
+  const state = {
+    user: null,
+    tokenJwt: "",
+    checkoutToken: "",
+    logs: [],
+  };
+
+  function normalizeBase(v) {
+    return String(v || "").trim().replace(/\/+$/, "");
+  }
+
+  function normalizeApiBase(raw) {
+    const b = normalizeBase(raw);
+    if (!b) return "/api/v1";
+    if (/\/api\/v1$/i.test(b)) return b;
+    if (/\/api$/i.test(b)) return b + "/v1";
+    if (/^https?:\/\//i.test(b) || b.startsWith("/")) return b + "/api/v1";
+    return "/api/v1";
+  }
+
+  const API_BASE = normalizeApiBase(HB.apiBase || root.getAttribute("data-api-base") || "");
+  if (elApi) elApi.textContent = API_BASE.replace(/^https?:\/\//, "");
+
+  const walletUrl = String(root.getAttribute("data-wallet-url") || "/wallet/").trim() || "/wallet/";
+  const okUrlBase = String(root.getAttribute("data-ok-url") || "/paiement-ok/").trim() || "/paiement-ok/";
+  const helpUrl = String(root.getAttribute("data-help-url") || "/aide-support/").trim() || "/aide-support/";
+
+  if (elGoWallet) elGoWallet.href = walletUrl;
+  if (elGoHelp) elGoHelp.href = helpUrl;
+
+  function fmtDate(v) {
+    const d = new Date(v || Date.now());
+    if (String(d) === "Invalid Date") return String(v || "-");
+    return d.toLocaleString("fr-FR", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    });
+  }
+
+  function esc(value) {
+    return String(value == null ? "" : value)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/\"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
+  function addLog(title, detail) {
+    state.logs.unshift({ at: new Date().toISOString(), title: String(title || "event"), detail: detail || "" });
+    state.logs = state.logs.slice(0, 60);
+    renderLogs();
+  }
+
+  function renderLogs() {
+    if (!elTech) return;
+    if (!state.logs.length) {
+      elTech.innerHTML = '<div class="hbpc-empty">Aucune donnee pour le moment.</div>';
+      return;
+    }
+    elTech.innerHTML = state.logs.map((x) => (
+      '<article class="hbpc-tech-item">' +
+        '<div><b>' + esc(x.title) + '</b> <small>' + esc(fmtDate(x.at)) + '</small></div>' +
+        (x.detail ? ('<div>' + esc(x.detail) + '</div>') : '') +
+      '</article>'
+    )).join("");
+  }
+
+  function setState(text) {
+    if (elState) elState.textContent = text || "Pret";
+  }
+
+  function showAlert(msg) {
+    if (!elAlert) return;
+    if (!msg) {
+      elAlert.style.display = "none";
+      elAlert.textContent = "";
+      return;
+    }
+    elAlert.textContent = msg;
+    elAlert.style.display = "block";
+  }
+
+  function parseJsonSafe(txt) {
+    try { return txt ? JSON.parse(txt) : null; } catch (_e) { return null; }
+  }
+
+  function getUser() {
+    const u = HB.currentUser || window.HB_USER || null;
+    if (!u) return null;
+    return {
+      wp_id: u.wp_user_id || u.id || u.user_id || null,
+      id: u.id || u.wp_user_id || u.user_id || null,
+      user_id: u.user_id || u.id || u.wp_user_id || null,
+      email: u.email || u.user_email || "",
+      roles: Array.isArray(u.roles) ? u.roles : (u.roles ? [u.roles] : []),
+    };
+  }
+
+  function getCheckoutToken() {
+    const keys = ["checkout_token", "token", "order_id", "session_id"];
+    for (const k of keys) {
+      const v = String(params.get(k) || "").trim();
+      if (v) return v;
+    }
+    return "";
+  }
+
+  function getReasonText() {
+    const r = String(params.get("reason") || params.get("error") || params.get("cancel_reason") || "").trim();
+    if (r) return r;
+    return "Annulation utilisateur ou retour provider.";
+  }
+
+  function authHeaders(withJson) {
+    const h = { Accept: "application/json" };
+    if (withJson) h["Content-Type"] = "application/json";
+
+    if (state.tokenJwt) {
+      h["Authorization"] = "Bearer " + state.tokenJwt;
+      h["X-HB-Token"] = state.tokenJwt;
+    }
+
+    if (state.user) {
+      const wpId = state.user.wp_id || state.user.id || state.user.user_id;
+      if (wpId != null) h["X-WP-User-Id"] = String(wpId);
+      if (state.user.email) h["X-User-Email"] = String(state.user.email);
+      if (state.user.roles && state.user.roles.length) {
+        h["X-WP-User-Roles"] = state.user.roles.map((x) => String(x || "").toLowerCase()).join(",");
+      }
+    }
+
+    return h;
+  }
+
+  async function api(method, path, body, attempt) {
+    const tryNo = Number(attempt || 0);
+    const res = await fetch(API_BASE + path, {
+      method,
+      headers: authHeaders(!!body),
+      body: body ? JSON.stringify(body) : undefined,
+      credentials: "same-origin",
+    });
+
+    const txt = await res.text().catch(() => "");
+    const data = parseJsonSafe(txt);
+
+    if (res.status === 429 && tryNo < 3) {
+      const waitMs = 700 * Math.pow(2, tryNo);
+      addLog("rate-limit", "HTTP 429, retry in " + waitMs + "ms");
+      await new Promise((r) => setTimeout(r, waitMs));
+      return api(method, path, body, tryNo + 1);
+    }
+
+    if (!res.ok) {
+      const err = new Error((data && data.detail) ? String(data.detail) : ("HTTP " + res.status));
+      err.status = res.status;
+      err.body = data;
+      throw err;
+    }
+
+    return data;
+  }
+
+  function markDiagnostic(text, mode) {
+    if (elStepDiagnosticText) elStepDiagnosticText.textContent = text || "-";
+    if (!elStepDiagnostic) return;
+    elStepDiagnostic.classList.remove("is-done", "is-error");
+    if (mode === "ok") elStepDiagnostic.classList.add("is-done");
+    if (mode === "err") elStepDiagnostic.classList.add("is-error");
+  }
+
+  function markNext(text, mode) {
+    if (elStepNextText) elStepNextText.textContent = text || "-";
+    if (!elStepNext) return;
+    elStepNext.classList.remove("is-done", "is-error");
+    if (mode === "ok") elStepNext.classList.add("is-done");
+    if (mode === "err") elStepNext.classList.add("is-error");
+  }
+
+  function buildOkUrlWithToken() {
+    if (!state.checkoutToken) return okUrlBase;
+    const sep = okUrlBase.includes("?") ? "&" : "?";
+    return okUrlBase + sep + "token=" + encodeURIComponent(state.checkoutToken);
+  }
+
+  async function runDiagnostics() {
+    const token = state.checkoutToken;
+    const studentId = Number((state.user && (state.user.wp_id || state.user.id || state.user.user_id)) || 0);
+
+    if (!token || !studentId) {
+      markDiagnostic("Token ou utilisateur manquant", "err");
+      markNext("Retourner au wallet et relancer le paiement", "ok");
+      if (elSubtx) elSubtx.textContent = "-";
+      if (elWallettx) elWallettx.textContent = "-";
+      if (elFinal) elFinal.textContent = "inconnu";
+      return;
+    }
+
+    setState("Diagnostic");
+    if (elCheckedAt) elCheckedAt.textContent = fmtDate(new Date().toISOString());
+
+    let subTx = null;
+    let walletTx = null;
+
+    try {
+      const list = await api("GET", "/payments/transactions");
+      if (Array.isArray(list)) {
+        subTx = list.find((x) => String(x.checkout_token || "") === token) || null;
+      }
+      addLog("diag-subscription", subTx ? ("status=" + subTx.status) : "absent");
+    } catch (err) {
+      addLog("diag-subscription-error", String(err && err.message ? err.message : err));
+    }
+
+    try {
+      const list = await api("GET", "/students/" + encodeURIComponent(String(studentId)) + "/wallet/topup/transactions?limit=120");
+      if (Array.isArray(list)) {
+        walletTx = list.find((x) => String(x.checkout_token || "") === token) || null;
+      }
+      addLog("diag-wallet", walletTx ? ("status=" + walletTx.status) : "absent");
+    } catch (err) {
+      addLog("diag-wallet-error", String(err && err.message ? err.message : err));
+    }
+
+    if (elSubtx) elSubtx.textContent = subTx ? (subTx.status || "-") : "not-found";
+    if (elWallettx) elWallettx.textContent = walletTx ? (walletTx.status || "-") : "not-found";
+
+    const subPaid = subTx && String(subTx.status || "").toLowerCase() === "paid";
+    const walletPaid = walletTx && String(walletTx.status || "").toLowerCase() === "paid";
+
+    if (subPaid || walletPaid) {
+      if (elFinal) elFinal.textContent = "paid detecte";
+      if (elStatusLine) elStatusLine.textContent = "Paiement capture detecte apres retour annule.";
+      if (elNote) elNote.textContent = "Le provider a finalement capture le paiement. Clique sur 'Ouvrir paiement-ok avec token' pour finaliser la confirmation backend.";
+      markDiagnostic("Token retrouve avec statut paid", "ok");
+      markNext("Ouvrir paiement-ok avec le token pour finaliser", "ok");
+      showAlert("Paiement detecte en statut paid malgre cette page annulee.");
+      setState("Paid detecte");
+      return;
+    }
+
+    if ((subTx && String(subTx.status || "").toLowerCase() === "pending") || (walletTx && String(walletTx.status || "").toLowerCase() === "pending")) {
+      if (elFinal) elFinal.textContent = "pending";
+      if (elStatusLine) elStatusLine.textContent = "Paiement initie mais non capture pour l'instant.";
+      markDiagnostic("Statut pending", "err");
+      markNext("Attendre quelques secondes puis reverifier, sinon relancer depuis wallet", "ok");
+      showAlert("Paiement en attente de capture. Tu peux reverifier ici ou relancer depuis wallet.");
+      setState("Pending");
+      return;
+    }
+
+    if (elFinal) elFinal.textContent = "annule";
+    if (elStatusLine) elStatusLine.textContent = "Aucune transaction payee associee a ce token.";
+    markDiagnostic("Aucune transaction paid detectee", "err");
+    markNext("Retour wallet et relance checkout", "ok");
+    showAlert("Annulation confirmee. Tu peux relancer le paiement depuis wallet.");
+    setState("Annule");
+  }
+
+  async function boot() {
+    state.user = getUser();
+    state.tokenJwt = String(HB.token || "").trim();
+    state.checkoutToken = getCheckoutToken();
+
+    if (elToken) elToken.textContent = state.checkoutToken || "-";
+    if (elTokenChip) elTokenChip.textContent = state.checkoutToken ? (state.checkoutToken.slice(0, 8) + "...") : "missing";
+    if (elReason) elReason.textContent = getReasonText();
+    if (elProviderMsg) elProviderMsg.textContent = String(params.get("message") || params.get("error_description") || "-");
+    if (elCheckedAt) elCheckedAt.textContent = fmtDate(new Date().toISOString());
+
+    if (elGoOk) elGoOk.href = buildOkUrlWithToken();
+
+    try {
+      setState("Analyse");
+      await runDiagnostics();
+    } catch (err) {
+      showAlert(String(err && err.message ? err.message : err));
+      setState("Erreur");
+    }
+  }
+
+  if (elOpenOkWithToken) {
+    elOpenOkWithToken.addEventListener("click", () => {
+      window.location.href = buildOkUrlWithToken();
+    });
+  }
+
+  if (elRecheck) {
+    elRecheck.addEventListener("click", async () => {
+      showAlert("");
+      await runDiagnostics();
+    });
+  }
+
+  boot();
+})();
+</script>

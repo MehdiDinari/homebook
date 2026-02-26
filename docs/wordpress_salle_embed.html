@@ -1,0 +1,1178 @@
+<div id="hb-salle-page" class="hbs" data-api-base="" data-messages-url="/messages/" data-notifications-url="/notifications/" data-poll-ms="8000">
+  <header class="hbs-hero">
+    <div>
+      <h1>Salle de discussion</h1>
+      <p class="hbs-muted">Messagerie instantanee de room. Parametre principal: <code>?room_id=...</code></p>
+      <div class="hbs-chips">
+        <span class="hbs-chip">API: <b id="hbs-api">-</b></span>
+        <span class="hbs-chip">Etat: <b id="hbs-state">Pret</b></span>
+        <span class="hbs-chip">Messages: <b id="hbs-count">0</b></span>
+      </div>
+    </div>
+    <div class="hbs-actions">
+      <a id="hbs-go-messages" class="hbs-btn" href="/messages/">Messages</a>
+      <a id="hbs-go-notifs" class="hbs-btn hbs-btn-primary" href="/notifications/">Notifications</a>
+    </div>
+  </header>
+
+  <section class="hbs-grid">
+    <article class="hbs-card">
+      <div class="hbs-card-head">
+        <h2>Conversation</h2>
+        <p>Selectionne une room puis echange des messages.</p>
+      </div>
+      <div class="hbs-card-body">
+        <div class="hbs-toolbar">
+          <label class="hbs-field">
+            <span>Room</span>
+            <select id="hbs-room-select"></select>
+          </label>
+          <button id="hbs-refresh" class="hbs-btn" type="button">Actualiser</button>
+        </div>
+
+        <div id="hbs-alert" class="hbs-alert" style="display:none"></div>
+
+        <div id="hbs-messages" class="hbs-messages">
+          <div class="hbs-empty">Charge une room pour afficher les messages.</div>
+        </div>
+
+        <form id="hbs-form" class="hbs-form" autocomplete="off">
+          <label class="hbs-field">
+            <span>Message</span>
+            <textarea id="hbs-input" rows="3" maxlength="4000" placeholder="Ecris un message..."></textarea>
+          </label>
+          <label class="hbs-field">
+            <span>URL image (optionnel)</span>
+            <input id="hbs-asset" type="url" placeholder="https://...jpg|png|webp|gif" />
+          </label>
+          <div class="hbs-form-actions">
+            <button id="hbs-send" class="hbs-btn hbs-btn-primary" type="submit">Envoyer</button>
+            <button id="hbs-clear" class="hbs-btn" type="button">Effacer</button>
+          </div>
+        </form>
+      </div>
+    </article>
+
+    <aside class="hbs-side">
+      <article class="hbs-card">
+        <div class="hbs-card-head">
+          <h2>Infos room</h2>
+          <p>Details de la salle active.</p>
+        </div>
+        <div class="hbs-card-body">
+          <div class="hbs-kv"><span>ID</span><b id="hbs-room-id">-</b></div>
+          <div class="hbs-kv"><span>Titre</span><b id="hbs-room-title">-</b></div>
+          <div class="hbs-kv"><span>Type</span><b id="hbs-room-type">-</b></div>
+          <div class="hbs-kv"><span>Non lus</span><b id="hbs-room-unread">-</b></div>
+          <div class="hbs-kv"><span>Membres</span><b id="hbs-room-members">-</b></div>
+        </div>
+      </article>
+
+      <article class="hbs-card">
+        <div class="hbs-card-head">
+          <h2>Inviter au groupe</h2>
+          <p>Disponible seulement pour les rooms de type groupe.</p>
+        </div>
+        <div class="hbs-card-body">
+          <label class="hbs-field">
+            <span>Recherche utilisateur</span>
+            <input id="hbs-invite-search" type="search" placeholder="Nom, email..." />
+          </label>
+          <div id="hbs-invite-results" class="hbs-list">
+            <div class="hbs-empty">Selectionne une room groupe pour inviter.</div>
+          </div>
+
+          <div class="hbs-sep"></div>
+
+          <div class="hbs-subtitle">Invitations en attente</div>
+          <div id="hbs-pending-invites" class="hbs-list">
+            <div class="hbs-empty">Aucune invitation en attente.</div>
+          </div>
+        </div>
+      </article>
+
+      <article class="hbs-card">
+        <div class="hbs-card-head">
+          <h2>Astuces</h2>
+          <p>Evite les erreurs frequentes.</p>
+        </div>
+        <div class="hbs-card-body">
+          <ul class="hbs-tips">
+            <li>Si tu vois 429, ralentis les refresh manuels.</li>
+            <li>Le contenu message ne peut pas etre vide.</li>
+            <li>Les images doivent etre en URL publique HTTPS.</li>
+          </ul>
+        </div>
+      </article>
+    </aside>
+  </section>
+</div>
+
+<style>
+  #hb-salle-page.hbs {
+    --bg: #f4f8ff;
+    --card: #ffffff;
+    --text: #0f243d;
+    --muted: #5d7087;
+    --stroke: #d8e5f7;
+    --primary: #0f3d69;
+    --primary-2: #1a568f;
+    --self: #e8f2ff;
+    --other: #f8fbff;
+    font-family: "Inter", "Segoe UI", Arial, sans-serif;
+    color: var(--text);
+    background:
+      radial-gradient(920px 390px at -10% -30%, rgba(26, 86, 143, 0.18), transparent 60%),
+      radial-gradient(920px 360px at 110% -20%, rgba(15, 61, 105, 0.14), transparent 58%),
+      var(--bg);
+    border: 1px solid var(--stroke);
+    border-radius: 22px;
+    padding: 18px;
+    box-shadow: 0 20px 54px rgba(15, 33, 58, 0.09);
+  }
+
+  #hb-salle-page * { box-sizing: border-box; }
+
+  #hb-salle-page .hbs-hero {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+  }
+
+  #hb-salle-page h1 {
+    margin: 0;
+    font-size: clamp(24px, 4vw, 34px);
+    letter-spacing: -0.03em;
+    color: var(--primary);
+    line-height: 1.05;
+  }
+
+  #hb-salle-page .hbs-muted {
+    margin: 8px 0 0;
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  #hb-salle-page .hbs-chips {
+    margin-top: 10px;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  #hb-salle-page .hbs-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px solid var(--stroke);
+    border-radius: 999px;
+    background: #fff;
+    padding: 7px 10px;
+    font-size: 12px;
+    color: var(--muted);
+    font-weight: 700;
+  }
+
+  #hb-salle-page .hbs-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  #hb-salle-page .hbs-btn {
+    border: 1px solid #c8daef;
+    border-radius: 12px;
+    background: #f3f8ff;
+    color: var(--primary);
+    font-size: 13px;
+    font-weight: 800;
+    cursor: pointer;
+    padding: 10px 12px;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+  }
+
+  #hb-salle-page .hbs-btn-primary {
+    color: #fff;
+    border-color: rgba(15, 61, 105, 0.45);
+    background: linear-gradient(180deg, var(--primary-2), var(--primary));
+  }
+
+  #hb-salle-page .hbs-grid {
+    display: grid;
+    grid-template-columns: 1.3fr 0.7fr;
+    gap: 12px;
+    align-items: start;
+  }
+
+  #hb-salle-page .hbs-card {
+    border: 1px solid var(--stroke);
+    border-radius: 18px;
+    background: var(--card);
+    box-shadow: 0 12px 34px rgba(15, 33, 58, 0.08);
+    overflow: hidden;
+  }
+
+  #hb-salle-page .hbs-card-head {
+    padding: 14px;
+    border-bottom: 1px solid var(--stroke);
+    background: linear-gradient(180deg, #fff, #f9fcff);
+  }
+
+  #hb-salle-page .hbs-card-head h2 {
+    margin: 0;
+    font-size: 16px;
+    color: var(--primary);
+  }
+
+  #hb-salle-page .hbs-card-head p {
+    margin: 6px 0 0;
+    color: var(--muted);
+    font-size: 12px;
+  }
+
+  #hb-salle-page .hbs-card-body { padding: 14px; }
+
+  #hb-salle-page .hbs-toolbar {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+
+  #hb-salle-page .hbs-field {
+    display: grid;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--primary);
+    font-weight: 700;
+  }
+
+  #hb-salle-page .hbs-field select,
+  #hb-salle-page .hbs-field input,
+  #hb-salle-page .hbs-field textarea {
+    width: 100%;
+    border: 1px solid #c6d9ef;
+    border-radius: 10px;
+    background: #fff;
+    padding: 10px 11px;
+    font-size: 14px;
+    color: var(--text);
+    outline: none;
+  }
+
+  #hb-salle-page .hbs-field select:focus,
+  #hb-salle-page .hbs-field input:focus,
+  #hb-salle-page .hbs-field textarea:focus {
+    border-color: #2a6ba8;
+    box-shadow: 0 0 0 4px rgba(26, 86, 143, 0.16);
+  }
+
+  #hb-salle-page .hbs-alert {
+    margin-bottom: 10px;
+    border-radius: 10px;
+    border: 1px solid #efb6b6;
+    background: #fff2f2;
+    color: #7f1d1d;
+    font-size: 12px;
+    padding: 9px 10px;
+  }
+
+  #hb-salle-page .hbs-messages {
+    border: 1px solid #d5e4f7;
+    border-radius: 16px;
+    background:
+      radial-gradient(420px 220px at 0% 0%, rgba(26,86,143,0.06), transparent 70%),
+      radial-gradient(420px 220px at 100% 0%, rgba(15,61,105,0.06), transparent 70%),
+      #fbfdff;
+    min-height: 360px;
+    max-height: 62vh;
+    overflow: auto;
+    padding: 12px;
+    display: grid;
+    gap: 10px;
+  }
+
+  #hb-salle-page .hbs-empty {
+    border: 1px dashed #cfe0f5;
+    border-radius: 12px;
+    background: #fff;
+    color: var(--muted);
+    font-size: 13px;
+    padding: 12px;
+  }
+
+  #hb-salle-page .hbs-msg {
+    border: 1px solid #d7e5f8;
+    border-radius: 16px 16px 16px 6px;
+    background: #ffffff;
+    padding: 10px 11px;
+    max-width: min(88%, 760px);
+    justify-self: start;
+    box-shadow: 0 8px 22px rgba(15,33,58,0.06);
+  }
+
+  #hb-salle-page .hbs-msg.self {
+    background: linear-gradient(180deg, #e9f3ff, #deeeff);
+    border-color: #b8d5f4;
+    border-radius: 16px 16px 6px 16px;
+    justify-self: end;
+  }
+
+  #hb-salle-page .hbs-msg-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 8px;
+    margin-bottom: 6px;
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  #hb-salle-page .hbs-msg-author {
+    font-weight: 800;
+    color: var(--primary);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  #hb-salle-page .hbs-avatar {
+    width: 20px;
+    height: 20px;
+    border-radius: 999px;
+    object-fit: cover;
+    border: 1px solid #c8daef;
+    background: #fff;
+  }
+
+  #hb-salle-page .hbs-role {
+    font-size: 10px;
+    border: 1px solid #d4e2f5;
+    border-radius: 999px;
+    padding: 2px 6px;
+    color: #4f657f;
+    background: #fff;
+  }
+
+  #hb-salle-page .hbs-msg-content {
+    white-space: pre-wrap;
+    line-height: 1.5;
+    font-size: 14px;
+    color: var(--text);
+  }
+
+  #hb-salle-page .hbs-msg-asset {
+    display: block;
+    margin-top: 8px;
+    border-radius: 10px;
+    border: 1px solid #d4e2f5;
+    max-width: min(100%, 420px);
+  }
+
+  #hb-salle-page .hbs-form {
+    margin-top: 10px;
+    display: grid;
+    gap: 10px;
+  }
+
+  #hb-salle-page .hbs-form-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+  }
+
+  #hb-salle-page .hbs-side {
+    display: grid;
+    gap: 12px;
+  }
+
+  #hb-salle-page .hbs-kv {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 10px;
+    border: 1px solid #d5e4f7;
+    border-radius: 10px;
+    background: #fbfdff;
+    margin-bottom: 8px;
+  }
+
+  #hb-salle-page .hbs-kv span { color: var(--muted); font-size: 12px; font-weight: 700; }
+  #hb-salle-page .hbs-kv b {
+    color: var(--text);
+    font-size: 12px;
+    font-weight: 800;
+    max-width: 64%;
+    text-align: right;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  #hb-salle-page .hbs-list {
+    display: grid;
+    gap: 8px;
+  }
+
+  #hb-salle-page .hbs-user,
+  #hb-salle-page .hbs-inv {
+    border: 1px solid #d4e2f5;
+    border-radius: 10px;
+    background: #fbfdff;
+    padding: 8px;
+    display: grid;
+    gap: 6px;
+  }
+
+  #hb-salle-page .hbs-user-top,
+  #hb-salle-page .hbs-inv-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+  }
+
+  #hb-salle-page .hbs-user-name,
+  #hb-salle-page .hbs-inv-name {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 800;
+    color: var(--text);
+  }
+
+  #hb-salle-page .hbs-user-meta,
+  #hb-salle-page .hbs-inv-meta {
+    margin: 0;
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  #hb-salle-page .hbs-mini-btn {
+    border: 1px solid #c7d9f0;
+    border-radius: 9px;
+    background: #fff;
+    color: var(--primary);
+    font-size: 12px;
+    font-weight: 800;
+    padding: 7px 9px;
+    cursor: pointer;
+    text-decoration: none;
+  }
+
+  #hb-salle-page .hbs-mini-btn.primary {
+    color: #fff;
+    border-color: rgba(15, 61, 105, 0.5);
+    background: linear-gradient(180deg, #1a568f, #0f3d69);
+  }
+
+  #hb-salle-page .hbs-subtitle {
+    font-size: 12px;
+    color: var(--primary);
+    font-weight: 800;
+    margin-bottom: 6px;
+  }
+
+  #hb-salle-page .hbs-sep {
+    height: 1px;
+    background: #dee8f7;
+    margin: 10px 0;
+  }
+
+  #hb-salle-page .hbs-tips {
+    margin: 0;
+    padding-left: 16px;
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.5;
+    display: grid;
+    gap: 6px;
+  }
+
+  @media (max-width: 980px) {
+    #hb-salle-page .hbs-grid { grid-template-columns: 1fr; }
+  }
+
+  @media (max-width: 740px) {
+    #hb-salle-page .hbs-toolbar { grid-template-columns: 1fr; }
+  }
+</style>
+
+<script>
+(() => {
+  if (window.__HB_SALLE_PAGE_INIT__) return;
+  window.__HB_SALLE_PAGE_INIT__ = true;
+
+  const root = document.getElementById("hb-salle-page");
+  if (!root) return;
+
+  const HB = window.HB_CONFIG || {};
+  const DEBUG = new URLSearchParams(window.location.search).get("debug") === "1";
+
+  const elApi = root.querySelector("#hbs-api");
+  const elState = root.querySelector("#hbs-state");
+  const elCount = root.querySelector("#hbs-count");
+  const elAlert = root.querySelector("#hbs-alert");
+  const elRoomSelect = root.querySelector("#hbs-room-select");
+  const elRefresh = root.querySelector("#hbs-refresh");
+  const elMessages = root.querySelector("#hbs-messages");
+  const elForm = root.querySelector("#hbs-form");
+  const elInput = root.querySelector("#hbs-input");
+  const elAsset = root.querySelector("#hbs-asset");
+  const elClear = root.querySelector("#hbs-clear");
+  const elSend = root.querySelector("#hbs-send");
+  const elGoMessages = root.querySelector("#hbs-go-messages");
+  const elGoNotifs = root.querySelector("#hbs-go-notifs");
+  const elRoomId = root.querySelector("#hbs-room-id");
+  const elRoomTitle = root.querySelector("#hbs-room-title");
+  const elRoomType = root.querySelector("#hbs-room-type");
+  const elRoomUnread = root.querySelector("#hbs-room-unread");
+  const elRoomMembers = root.querySelector("#hbs-room-members");
+
+  const elInviteSearch = root.querySelector("#hbs-invite-search");
+  const elInviteResults = root.querySelector("#hbs-invite-results");
+  const elPendingInvites = root.querySelector("#hbs-pending-invites");
+
+  const MESSAGES_URL = String(root.getAttribute("data-messages-url") || "/messages/").trim();
+  const NOTIFS_URL = String(root.getAttribute("data-notifications-url") || "/notifications/").trim();
+  const POLL_MS = Math.max(5000, Number(root.getAttribute("data-poll-ms") || 8000) || 8000);
+
+  const state = {
+    user: null,
+    rooms: [],
+    activeRoomId: null,
+    messages: [],
+    messagesByRoom: {},
+    loadingRooms: false,
+    loadingMessages: false,
+    messageRequestSeq: 0,
+    pollTimer: null,
+    backoffMs: 0,
+    friendIds: new Set(),
+
+    inviteResults: [],
+    pendingInvites: [],
+  };
+
+  elGoMessages.href = MESSAGES_URL;
+  elGoNotifs.href = NOTIFS_URL;
+
+  function debug(label, payload) {
+    if (!DEBUG) return;
+    console.log("[salle]", label, payload);
+  }
+
+  function normalizeBase(v) {
+    return String(v || "").trim().replace(/\/+$/, "");
+  }
+
+  function normalizeApiBase(raw) {
+    const b = normalizeBase(raw);
+    if (!b) return "/api/v1";
+    if (/\/api\/v1$/i.test(b)) return b;
+    if (/\/api$/i.test(b)) return b + "/v1";
+    if (/^https?:\/\//i.test(b) || b.startsWith("/")) return b + "/api/v1";
+    return "/api/v1";
+  }
+
+  const API_BASE = normalizeApiBase(HB.apiBase || root.getAttribute("data-api-base") || "");
+  if (elApi) elApi.textContent = API_BASE.replace(/^https?:\/\//, "");
+
+  function esc(v) {
+    return String(v == null ? "" : v)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
+  function toFrDate(iso) {
+    if (!iso) return "-";
+    const d = new Date(iso);
+    if (String(d) === "Invalid Date") return String(iso);
+    return d.toLocaleString("fr-FR", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    });
+  }
+
+  function roleLabel(v) {
+    const t = String(v || "").toLowerCase();
+    if (t === "prof") return "Prof";
+    if (t === "student") return "Eleve";
+    if (t === "admin") return "Admin";
+    return "User";
+  }
+
+  function roomTypeLabel(v) {
+    const t = String(v || "").toLowerCase();
+    if (t === "private") return "Prive";
+    if (t === "group") return "Groupe";
+    if (t === "book") return "Livre";
+    return "Room";
+  }
+
+  function setState(text) {
+    if (elState) elState.textContent = text || "Pret";
+  }
+
+  function showAlert(msg) {
+    if (!elAlert) return;
+    if (!msg) {
+      elAlert.style.display = "none";
+      elAlert.textContent = "";
+      return;
+    }
+    elAlert.textContent = msg;
+    elAlert.style.display = "block";
+  }
+
+  function token() {
+    return String(HB.token || "").trim();
+  }
+
+  function getInjectedUser() {
+    const u = HB.currentUser || window.HB_USER || null;
+    if (!u) return null;
+    return {
+      wp_id: u.wp_user_id || u.id || u.user_id || null,
+      id: u.id || u.wp_user_id || u.user_id || null,
+      user_id: u.user_id || u.id || u.wp_user_id || null,
+      email: u.email || u.user_email || "",
+      name: u.displayName || u.display_name || u.name || "",
+      roles: Array.isArray(u.roles) ? u.roles : [],
+    };
+  }
+
+  function rolesList() {
+    const raw = (state.user && (state.user.roles || state.user.role)) || [];
+    return (Array.isArray(raw) ? raw : [raw]).map((x) => String(x || "").toLowerCase()).filter(Boolean);
+  }
+
+  function headers(withJson) {
+    const h = { Accept: "application/json" };
+    if (withJson) h["Content-Type"] = "application/json";
+    const t = token();
+    if (t) h["Authorization"] = "Bearer " + t;
+    if (state.user) {
+      const wpId = state.user.wp_id || state.user.id || state.user.user_id;
+      if (wpId != null) h["X-WP-User-Id"] = String(wpId);
+      if (state.user.email) h["X-User-Email"] = String(state.user.email);
+      const roles = rolesList();
+      if (roles.length) h["X-WP-User-Roles"] = roles.join(",");
+    }
+    return h;
+  }
+
+  function parseJsonSafe(txt) {
+    try { return txt ? JSON.parse(txt) : null; } catch (_e) { return null; }
+  }
+
+  function apiUrl(path) {
+    return API_BASE + (path.startsWith("/") ? path : "/" + path);
+  }
+
+  async function apiGet(path) {
+    const res = await fetch(apiUrl(path), {
+      method: "GET",
+      headers: headers(false),
+      credentials: "same-origin",
+    });
+    const txt = await res.text().catch(() => "");
+    const data = parseJsonSafe(txt);
+    debug("GET " + path, { status: res.status, body: data || txt });
+    if (!res.ok) {
+      const err = new Error((data && data.detail) ? data.detail : ("HTTP " + res.status));
+      err.status = res.status;
+      const ra = Number(res.headers.get("retry-after") || 0);
+      if (Number.isFinite(ra) && ra > 0) err.retryAfterSec = ra;
+      throw err;
+    }
+    return data;
+  }
+
+  async function apiPost(path, payload) {
+    const res = await fetch(apiUrl(path), {
+      method: "POST",
+      headers: headers(true),
+      credentials: "same-origin",
+      body: JSON.stringify(payload || {}),
+    });
+    const txt = await res.text().catch(() => "");
+    const data = parseJsonSafe(txt);
+    debug("POST " + path, { status: res.status, body: data || txt, payload: payload || {} });
+    if (!res.ok) {
+      const err = new Error((data && data.detail) ? data.detail : ("HTTP " + res.status));
+      err.status = res.status;
+      throw err;
+    }
+    return data;
+  }
+
+  function parseRoomIdFromUrl() {
+    const v = new URLSearchParams(window.location.search).get("room_id");
+    const n = Number(v || 0);
+    return Number.isFinite(n) && n > 0 ? n : null;
+  }
+
+  function pushRoomIdToUrl(roomId) {
+    const u = new URL(window.location.href);
+    u.searchParams.set("room_id", String(roomId));
+    window.history.replaceState({}, "", u.toString());
+  }
+
+  function myWpId() {
+    return Number((state.user && (state.user.wp_id || state.user.id || state.user.user_id)) || 0);
+  }
+
+  function canInviteAnyoneInGroups() {
+    const roles = new Set(rolesList());
+    return roles.has("administrator") || roles.has("prof") || roles.has("teacher") || roles.has("instructor");
+  }
+
+  function canInviteCandidate(wpUserId) {
+    const id = Number(wpUserId || 0);
+    if (!id || id === myWpId()) return false;
+    if (canInviteAnyoneInGroups()) return true;
+    return state.friendIds.has(id);
+  }
+
+  function activeRoom() {
+    const id = Number(state.activeRoomId || 0);
+    return state.rooms.find((r) => Number(r.room_id) === id) || null;
+  }
+
+  function renderRoomOptions() {
+    if (!state.rooms.length) {
+      elRoomSelect.innerHTML = '<option value="">Aucune room</option>';
+      return;
+    }
+    elRoomSelect.innerHTML = state.rooms.map((room) => {
+      const unread = Number(room.unread_count || 0);
+      return '<option value="' + esc(room.room_id) + '">' +
+        esc(room.title || ("Room #" + room.room_id)) +
+        ' [' + esc(roomTypeLabel(room.room_type)) + ']' +
+        (unread > 0 ? (' - ' + esc(unread) + ' non lus') : '') +
+      '</option>';
+    }).join("");
+    if (state.activeRoomId != null) {
+      elRoomSelect.value = String(state.activeRoomId);
+    }
+  }
+
+  function renderRoomInfo() {
+    const room = activeRoom();
+    if (!room) {
+      elRoomId.textContent = "-";
+      elRoomTitle.textContent = "-";
+      elRoomType.textContent = "-";
+      elRoomUnread.textContent = "-";
+      elRoomMembers.textContent = "-";
+      return;
+    }
+
+    const members = Array.isArray(room.member_profiles) ? room.member_profiles : [];
+    const memberText = members.length
+      ? members.map((m) => m.display_name + (m.role_tag ? (" (" + roleLabel(m.role_tag) + ")") : "")).join(", ")
+      : (Array.isArray(room.member_wp_user_ids) ? room.member_wp_user_ids.join(", ") : "-");
+
+    elRoomId.textContent = String(room.room_id);
+    elRoomTitle.textContent = room.title || "-";
+    elRoomType.textContent = roomTypeLabel(room.room_type);
+    elRoomUnread.textContent = String(room.unread_count || 0);
+    elRoomMembers.textContent = memberText || "-";
+  }
+
+  function renderMessages() {
+    if (!state.messages.length) {
+      elMessages.innerHTML = '<div class="hbs-empty">Aucun message pour cette room.</div>';
+      if (elCount) elCount.textContent = "0";
+      return;
+    }
+
+    const meWpId = myWpId();
+    elMessages.innerHTML = state.messages.map((msg) => {
+      const senderId = Number(msg.sender_wp_user_id || 0);
+      const me = senderId === meWpId;
+      const senderName = msg.sender_display_name || ("Utilisateur #" + senderId);
+      const role = roleLabel(msg.sender_role_tag || "");
+      const avatar = msg.sender_avatar_url || "";
+      return (
+        '<article class="hbs-msg' + (me ? ' self' : '') + '">' +
+          '<div class="hbs-msg-head">' +
+            '<span class="hbs-msg-author">' +
+              (avatar ? ('<img class="hbs-avatar" src="' + esc(avatar) + '" alt="">') : '') +
+              esc(me ? "Moi" : senderName) +
+              '<span class="hbs-role">' + esc(role) + '</span>' +
+            '</span>' +
+            '<span>' + esc(toFrDate(msg.created_at)) + '</span>' +
+          '</div>' +
+          '<div class="hbs-msg-content">' + esc(msg.content || "") + '</div>' +
+          (msg.asset_url ? ('<img class="hbs-msg-asset" src="' + esc(msg.asset_url) + '" alt="piece jointe" loading="lazy">') : '') +
+        '</article>'
+      );
+    }).join("");
+
+    if (elCount) elCount.textContent = String(state.messages.length);
+    elMessages.scrollTop = elMessages.scrollHeight;
+  }
+
+  function renderInviteResults() {
+    const room = activeRoom();
+    if (!room || String(room.room_type || "") !== "group") {
+      elInviteResults.innerHTML = '<div class="hbs-empty">Selectionne une room groupe pour inviter.</div>';
+      return;
+    }
+
+    const memberIds = new Set((Array.isArray(room.member_wp_user_ids) ? room.member_wp_user_ids : []).map((x) => Number(x || 0)));
+    const pendingIds = new Set((state.pendingInvites || []).map((x) => Number(x && x.invitee_wp_user_id || 0)));
+    const list = (state.inviteResults || []).filter((u) => {
+      const id = Number(u && u.id || 0);
+      if (!id || id === myWpId()) return false;
+      if (memberIds.has(id)) return false;
+      if (pendingIds.has(id)) return false;
+      return true;
+    });
+    if (!list.length) {
+      elInviteResults.innerHTML = '<div class="hbs-empty">Aucun resultat.</div>';
+      return;
+    }
+
+    elInviteResults.innerHTML = list.map((u) => {
+      const eligible = canInviteCandidate(u.id);
+      const btn = eligible
+        ? ('<button class="hbs-mini-btn primary" type="button" data-invite-user="' + esc(u.id) + '">Inviter</button>')
+        : '<button class="hbs-mini-btn" type="button" disabled title="En eleve: invitation reservee aux amis">Ami requis</button>';
+      return (
+        '<article class="hbs-user" data-user-id="' + esc(u.id) + '">' +
+          '<div class="hbs-user-top">' +
+            '<h3 class="hbs-user-name">' + esc(u.title || ("User #" + u.id)) + '</h3>' +
+            '<span class="hbs-role">' + esc(roleLabel(u.role_tag)) + '</span>' +
+          '</div>' +
+          '<p class="hbs-user-meta">WP#' + esc(u.id) + '</p>' +
+          '<div>' + btn + '</div>' +
+        '</article>'
+      );
+    }).join('');
+  }
+
+  function renderPendingInvites() {
+    const rows = state.pendingInvites || [];
+    if (!rows.length) {
+      elPendingInvites.innerHTML = '<div class="hbs-empty">Aucune invitation en attente.</div>';
+      return;
+    }
+    elPendingInvites.innerHTML = rows.map((r) => (
+      '<article class="hbs-inv">' +
+        '<div class="hbs-inv-top">' +
+          '<h3 class="hbs-inv-name">' + esc(r.invitee_display_name || ("User #" + r.invitee_wp_user_id)) + '</h3>' +
+          '<span class="hbs-role">' + esc(roleLabel(r.invitee_role_tag)) + '</span>' +
+        '</div>' +
+        '<p class="hbs-inv-meta">Invite par ' + esc(r.inviter_display_name || ("User #" + r.inviter_wp_user_id)) + '</p>' +
+      '</article>'
+    )).join('');
+  }
+
+  async function loadRooms() {
+    if (state.loadingRooms) return;
+    state.loadingRooms = true;
+    try {
+      const prevActiveRoomId = Number(state.activeRoomId || 0) || null;
+      const rows = await apiGet("/chats/rooms");
+      state.rooms = Array.isArray(rows) ? rows : [];
+      const asked = parseRoomIdFromUrl();
+      if (asked && state.rooms.some((r) => Number(r.room_id) === asked)) {
+        state.activeRoomId = asked;
+      } else if (!state.activeRoomId && state.rooms.length) {
+        state.activeRoomId = Number(state.rooms[0].room_id);
+      } else if (state.activeRoomId && !state.rooms.some((r) => Number(r.room_id) === Number(state.activeRoomId))) {
+        state.activeRoomId = state.rooms.length ? Number(state.rooms[0].room_id) : null;
+      }
+      const nextActiveRoomId = Number(state.activeRoomId || 0) || null;
+      if (prevActiveRoomId !== nextActiveRoomId) {
+        state.messageRequestSeq += 1;
+      }
+      renderRoomOptions();
+      renderRoomInfo();
+      state.messages = state.activeRoomId != null
+        ? (state.messagesByRoom[String(state.activeRoomId)] || [])
+        : [];
+      renderMessages();
+      showAlert("");
+      const hadBackoff = state.backoffMs > 0;
+      state.backoffMs = 0;
+      if (hadBackoff && state.pollTimer) startPolling();
+    } catch (e) {
+      const msg = String(e && e.message ? e.message : e);
+      showAlert(msg);
+      if (e && e.status === 429) {
+        if (e.retryAfterSec) state.backoffMs = Math.max(10000, e.retryAfterSec * 1000);
+        else state.backoffMs = Math.max(15000, state.backoffMs ? Math.min(state.backoffMs * 2, 5 * 60 * 1000) : 30000);
+        if (state.pollTimer) startPolling();
+      }
+      if (!state.rooms.length) {
+        state.activeRoomId = null;
+        renderRoomOptions();
+        renderRoomInfo();
+      }
+    } finally {
+      state.loadingRooms = false;
+    }
+  }
+
+  async function loadMessages() {
+    const roomId = Number(state.activeRoomId || 0);
+    if (!roomId) {
+      state.messages = [];
+      renderMessages();
+      setState("Sans room");
+      return;
+    }
+    const reqId = ++state.messageRequestSeq;
+    state.loadingMessages = true;
+    setState("Chargement...");
+    try {
+      const rows = await apiGet("/chats/rooms/" + encodeURIComponent(roomId) + "/messages?limit=100");
+      if (reqId !== state.messageRequestSeq) return;
+      const list = Array.isArray(rows) ? rows : [];
+      state.messagesByRoom[String(roomId)] = list;
+      if (Number(state.activeRoomId || 0) !== roomId) return;
+      state.messages = list;
+      renderMessages();
+      setState("Pret");
+      showAlert("");
+      pushRoomIdToUrl(roomId);
+      const hadBackoff = state.backoffMs > 0;
+      state.backoffMs = 0;
+      if (hadBackoff && state.pollTimer) startPolling();
+      const room = activeRoom();
+      if (room) room.unread_count = 0;
+      renderRoomInfo();
+      renderRoomOptions();
+    } catch (e) {
+      if (reqId !== state.messageRequestSeq) return;
+      const msg = String(e && e.message ? e.message : e);
+      showAlert(msg);
+      setState("Erreur");
+      if (e && e.status === 429) {
+        if (e.retryAfterSec) state.backoffMs = Math.max(10000, e.retryAfterSec * 1000);
+        else state.backoffMs = Math.max(15000, state.backoffMs ? Math.min(state.backoffMs * 2, 5 * 60 * 1000) : 30000);
+        if (state.pollTimer) startPolling();
+      }
+    } finally {
+      if (reqId === state.messageRequestSeq) {
+        state.loadingMessages = false;
+      }
+    }
+  }
+
+  async function loadPendingInvites() {
+    const roomId = Number(state.activeRoomId || 0);
+    const room = activeRoom();
+    if (!roomId || !room || String(room.room_type || "") !== "group") {
+      state.pendingInvites = [];
+      renderPendingInvites();
+      return;
+    }
+    try {
+      const rows = await apiGet("/chats/invites?room_id=" + encodeURIComponent(roomId) + "&status=pending&limit=100");
+      state.pendingInvites = Array.isArray(rows) ? rows : [];
+    } catch (_e) {
+      state.pendingInvites = [];
+    }
+    renderPendingInvites();
+    renderInviteResults();
+  }
+
+  async function searchInviteUsers(query) {
+    const room = activeRoom();
+    if (!room || String(room.room_type || "") !== "group") {
+      state.inviteResults = [];
+      renderInviteResults();
+      return;
+    }
+    const q = String(query || "").trim();
+    if (!q || q.length < 2) {
+      state.inviteResults = [];
+      renderInviteResults();
+      return;
+    }
+
+    try {
+      const result = await apiGet("/search?q=" + encodeURIComponent(q) + "&types=users&limit=20");
+      const items = Array.isArray(result && result.items) ? result.items : [];
+      state.inviteResults = items.filter((x) => String(x.type) === "user");
+      renderInviteResults();
+    } catch (e) {
+      showAlert(String(e && e.message ? e.message : e));
+    }
+  }
+
+  async function loadInvitePermissions() {
+    try {
+      const rows = await apiGet("/friends");
+      const list = Array.isArray(rows) ? rows : [];
+      state.friendIds = new Set(
+        list.map((x) => Number(x && x.wp_user_id || 0)).filter((x) => Number.isFinite(x) && x > 0)
+      );
+    } catch (_e) {
+      state.friendIds = new Set();
+    }
+  }
+
+  async function inviteUserToActiveRoom(wpUserId) {
+    const room = activeRoom();
+    if (!room) return;
+    if (String(room.room_type || "") !== "group") {
+      showAlert("Invitation possible seulement dans une room groupe.");
+      return;
+    }
+    if (!canInviteCandidate(wpUserId)) {
+      showAlert("Invitation non autorisee: en eleve, tu peux inviter uniquement tes amis.");
+      return;
+    }
+    try {
+      await apiPost("/chats/rooms/" + encodeURIComponent(room.room_id) + "/invites", {
+        invitee_wp_user_id: Number(wpUserId || 0),
+        message: null,
+      });
+      await loadPendingInvites();
+      if (elInviteSearch) elInviteSearch.value = "";
+      state.inviteResults = [];
+      renderInviteResults();
+    } catch (e) {
+      showAlert(String(e && e.message ? e.message : e));
+    }
+  }
+
+  async function sendMessage(ev) {
+    ev.preventDefault();
+    const roomId = Number(state.activeRoomId || 0);
+    if (!roomId) {
+      showAlert("Aucune room active.");
+      return;
+    }
+    const content = String(elInput.value || "").trim();
+    const asset = String(elAsset.value || "").trim();
+    if (!content) {
+      showAlert("Message vide.");
+      return;
+    }
+
+    elSend.disabled = true;
+    try {
+      await apiPost("/chats/rooms/" + encodeURIComponent(roomId) + "/messages", {
+        content: content,
+        asset_url: asset || null,
+      });
+      elInput.value = "";
+      elAsset.value = "";
+      await loadMessages();
+    } catch (e) {
+      showAlert(String(e && e.message ? e.message : e));
+    } finally {
+      elSend.disabled = false;
+    }
+  }
+
+  function startPolling() {
+    stopPolling();
+    state.pollTimer = setInterval(async () => {
+      if (document.hidden) return;
+      await loadMessages();
+      await loadPendingInvites();
+    }, state.backoffMs || POLL_MS);
+  }
+
+  function stopPolling() {
+    if (state.pollTimer) {
+      clearInterval(state.pollTimer);
+      state.pollTimer = null;
+    }
+  }
+
+  function bindEvents() {
+    elRefresh.addEventListener("click", async () => {
+      await loadInvitePermissions();
+      await loadRooms();
+      await loadMessages();
+      await loadPendingInvites();
+    });
+
+    elRoomSelect.addEventListener("change", async () => {
+      const id = Number(elRoomSelect.value || 0);
+      state.activeRoomId = Number.isFinite(id) && id > 0 ? id : null;
+      state.messageRequestSeq += 1;
+      state.messages = state.activeRoomId != null
+        ? (state.messagesByRoom[String(state.activeRoomId)] || [])
+        : [];
+      renderRoomInfo();
+      renderMessages();
+      await loadMessages();
+      await loadPendingInvites();
+      state.inviteResults = [];
+      renderInviteResults();
+    });
+
+    elForm.addEventListener("submit", sendMessage);
+
+    elClear.addEventListener("click", () => {
+      elInput.value = "";
+      elAsset.value = "";
+      elInput.focus();
+    });
+
+    elInviteSearch.addEventListener("input", () => {
+      clearTimeout(elInviteSearch._t);
+      elInviteSearch._t = setTimeout(() => searchInviteUsers(elInviteSearch.value || ""), 220);
+    });
+
+    root.addEventListener("click", (ev) => {
+      const btn = ev.target.closest("[data-invite-user]");
+      if (!btn) return;
+      inviteUserToActiveRoom(btn.getAttribute("data-invite-user"));
+    });
+
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden) {
+        loadMessages();
+        loadPendingInvites();
+      }
+    });
+
+    window.addEventListener("beforeunload", stopPolling);
+  }
+
+  async function boot() {
+    state.user = getInjectedUser();
+    if (!state.user) {
+      showAlert("HB_CONFIG/HB_USER introuvable. Verifie le snippet.");
+      setState("Non connecte");
+      return;
+    }
+
+    bindEvents();
+    await loadInvitePermissions();
+    await loadRooms();
+    await loadMessages();
+    await loadPendingInvites();
+    renderInviteResults();
+    startPolling();
+  }
+
+  boot();
+})();
+</script>

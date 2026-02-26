@@ -24,19 +24,27 @@ def _sanitize_text(text: str) -> str:
     return _CTRL_RE.sub("", (text or "")).strip()
 
 
-def _looks_like_prompt_echo(answer: str) -> bool:
+def _looks_like_prompt_echo(answer: str, user_message: str) -> bool:
     low = (answer or "").strip().lower()
     if not low:
         return True
     bad_markers = [
         "user question:",
         "instruction:",
+        "instructions:",
+        "answer in ",
+        "known themes",
         "conversation memory:",
         "book title:",
         "book author:",
         "book context:",
     ]
-    return any(marker in low for marker in bad_markers)
+    if any(marker in low for marker in bad_markers):
+        return True
+    user_low = _sanitize_text(user_message).lower()
+    if user_low and len(user_low) >= 8 and low.startswith(user_low):
+        return True
+    return False
 
 
 def _book_fallback(
@@ -164,7 +172,7 @@ async def ask_ollama(
                 resp.raise_for_status()
                 data = resp.json()
                 answer = _sanitize_text(str(data.get("response") or ""))
-                if answer and not _looks_like_prompt_echo(answer):
+                if answer and not _looks_like_prompt_echo(answer, user_message):
                     return answer
             except Exception as exc:
                 errors.append(f"{base_url}: {exc}")

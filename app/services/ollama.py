@@ -24,9 +24,15 @@ def _sanitize_text(text: str) -> str:
     return _CTRL_RE.sub("", (text or "")).strip()
 
 
-def _looks_like_prompt_echo(answer: str, user_message: str) -> bool:
+def _looks_like_prompt_echo(
+    answer: str,
+    user_message: str,
+    recent_user_messages: list[str] | None = None,
+) -> bool:
     low = (answer or "").strip().lower()
     if not low:
+        return True
+    if low.startswith('"') and low.endswith('"'):
         return True
     bad_markers = [
         "user question:",
@@ -44,6 +50,10 @@ def _looks_like_prompt_echo(answer: str, user_message: str) -> bool:
     user_low = _sanitize_text(user_message).lower()
     if user_low and len(user_low) >= 8 and low.startswith(user_low):
         return True
+    for msg in (recent_user_messages or []):
+        msg_low = _sanitize_text(msg).lower()
+        if msg_low and len(msg_low) >= 8 and msg_low in low:
+            return True
     return False
 
 
@@ -53,6 +63,7 @@ def _book_fallback(
     book_author: str,
     book_description: str,
     user_message: str,
+    book_categories: list[str] | None = None,
 ) -> str:
     title = (book_title or "").strip() or "ce livre"
     author = (book_author or "").strip()
@@ -63,6 +74,12 @@ def _book_fallback(
         if author:
             return f"L'auteur de {title} est {author}."
         return f"Je n'ai pas l'auteur exact pour {title} dans le contexte actuel."
+
+    if re.search(r"\b(salut|bonjour|bonsoir|hello|hey|hi)\b", user_low):
+        return f"Salut. Je peux t'aider sur {title}: resume, auteur, themes et personnages."
+
+    if "merci" in user_low:
+        return "Avec plaisir. Pose-moi une question sur le livre."
 
     if "résum" in user_low or "resum" in user_low or "summary" in user_low:
         if desc:
@@ -77,6 +94,15 @@ def _book_fallback(
             f"Résumé rapide de {title}: c'est une oeuvre{author_part} "
             "centrée sur des thèmes humains et existentiels."
         )
+
+    if "theme" in user_low or "thème" in user_low or "themes" in user_low or "thèmes" in user_low:
+        if book_categories:
+            cats = ", ".join([c for c in book_categories if c])[:120]
+            if cats:
+                return f"Les themes principaux de {title}: {cats}."
+        if desc:
+            return _sanitize_text(f"Themes de {title}: {desc[:260]}")
+        return f"Je n'ai pas assez de details pour lister les themes de {title}."
 
     if desc:
         return _sanitize_text(f"Contexte utile sur {title}: {desc[:420]}")
@@ -124,6 +150,38 @@ async def ask_ollama(
             "Je peux donner un résumé, les thèmes et une analyse."
         )
 
+    # Deterministic path for common intents to avoid model drift on low-resource runtime.
+    direct = _book_fallback(
+        book_title=book_title,
+        book_author=book_author,
+        book_description=book_description,
+        user_message=user_message,
+        book_categories=book_categories,
+    )
+    user_low = _sanitize_text(user_message).lower()
+    if any(
+        x in user_low
+        for x in [
+            "auteur",
+            "author",
+            "résum",
+            "resum",
+            "summary",
+            "theme",
+            "thème",
+            "themes",
+            "thèmes",
+            "salut",
+            "bonjour",
+            "bonsoir",
+            "hello",
+            "hey",
+            "hi",
+            "merci",
+        ]
+    ):
+        return direct
+
     categories = ", ".join([(x or "").strip() for x in (book_categories or []) if (x or "").strip()])
     context = (book_description or "").strip()
     if not context:
@@ -132,6 +190,7 @@ async def ask_ollama(
     # Keep prompts compact to fit small CPU-only models.
     # Ignore assistant history to avoid feedback loops when a bad answer is stored.
     history_lines: list[str] = []
+    recent_user_messages: list[str] = []
     for item in (history or [])[-8:]:
         if item.get("role") == "assistant":
             continue
@@ -139,6 +198,7 @@ async def ask_ollama(
         content = (item.get("content") or "").strip()
         if not content:
             continue
+        recent_user_messages.append(content)
         history_lines.append(f"{role}: {content[:160]}")
     history_block = "\n".join(history_lines)
 
@@ -172,7 +232,7 @@ async def ask_ollama(
                 resp.raise_for_status()
                 data = resp.json()
                 answer = _sanitize_text(str(data.get("response") or ""))
-                if answer and not _looks_like_prompt_echo(answer, user_message):
+                if answer and not _looks_like_prompt_echo(answer, user_message, recent_user_messages):
                     return answer
             except Exception as exc:
                 errors.append(f"{base_url}: {exc}")
@@ -180,20 +240,10 @@ async def ask_ollama(
 
     fallback = book_description.strip()
     if fallback:
-        return _book_fallback(
-            book_title=book_title,
-            book_author=book_author,
-            book_description=book_description,
-            user_message=user_message,
-        )
+        return direct
 
     if errors:
-        return _book_fallback(
-            book_title=book_title,
-            book_author=book_author,
-            book_description=book_description,
-            user_message=user_message,
-        )
+        return direct
 
     return (
         "Je n'ai pas encore assez de contexte sur ce livre. "

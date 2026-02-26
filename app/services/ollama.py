@@ -64,30 +64,36 @@ async def ask_ollama(
     if not context:
         context = "Contexte détaillé indisponible."
 
+    # Keep prompts compact to fit small CPU-only models.
     history_lines: list[str] = []
-    for item in (history or [])[-10:]:
+    for item in (history or [])[-6:]:
         role = "Assistant" if item.get("role") == "assistant" else "User"
         content = (item.get("content") or "").strip()
         if not content:
             continue
-        history_lines.append(f"{role}: {content[:380]}")
+        history_lines.append(f"{role}: {content[:220]}")
     history_block = "\n".join(history_lines)
 
     prompt = (
         f"Book title: {book_title}\n"
         f"Book author: {book_author or 'Unknown'}\n"
         f"Book categories: {categories or 'Unknown'}\n"
-        f"Book context: {context[:2600]}\n"
+        f"Book context: {context[:1200]}\n"
         f"Conversation memory:\n{history_block or 'No prior messages.'}\n"
         f"User question: {user_message}\n"
-        "Instruction: if exact details are missing, provide a useful answer based on known information "
-        "about the title/author/themes and clearly mark uncertainty."
+        "Instruction: answer in 4-8 concise sentences max. "
+        "If exact details are missing, provide a useful answer based on known themes and mark uncertainty."
     )
 
     payload = {
         "model": settings.ollama_model,
         "prompt": f"{system_prompt}\n\n{prompt}",
         "stream": False,
+        "options": {
+            "num_ctx": 1024,
+            "num_predict": 180,
+            "temperature": 0.3,
+        },
     }
 
     errors: list[str] = []

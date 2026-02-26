@@ -52,9 +52,9 @@ services:
       - key: ALLOWED_CORS_ORIGINS
         sync: false
       - key: OLLAMA_BASE_URL
-        value: http://homebook-ollama:11434
+        value: http://homebook-ollama:10000
       - key: OLLAMA_MODEL
-        value: llama3.2:1b
+        value: smollm2:135m
       - key: OLLAMA_TIMEOUT_SECONDS
         value: "60"
       - key: S3_ENDPOINT_URL
@@ -147,9 +147,9 @@ services:
           name: homebook-api
           envVarKey: WP_APP_PASSWORD
       - key: OLLAMA_BASE_URL
-        value: http://homebook-ollama:11434
+        value: http://homebook-ollama:10000
       - key: OLLAMA_MODEL
-        value: llama3.2:1b
+        value: smollm2:135m
       - key: OLLAMA_TIMEOUT_SECONDS
         value: "60"
       - key: S3_ENDPOINT_URL
@@ -199,10 +199,10 @@ services:
     image: ollama/ollama:latest
     plan: standard
     region: frankfurt
-    dockerCommand: sh -lc "ollama serve & sleep 8 && ollama pull ${OLLAMA_MODEL:-llama3.2:1b} && wait"
+    dockerCommand: ollama serve
     envVars:
       - key: OLLAMA_MODEL
-        value: llama3.2:1b
+        value: smollm2:135m
     disk:
       name: ollama-data
       mountPath: /root/.ollama

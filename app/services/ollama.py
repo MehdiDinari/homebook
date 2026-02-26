@@ -24,6 +24,57 @@ def _sanitize_text(text: str) -> str:
     return _CTRL_RE.sub("", (text or "")).strip()
 
 
+def _looks_like_prompt_echo(answer: str) -> bool:
+    low = (answer or "").strip().lower()
+    if not low:
+        return True
+    bad_markers = [
+        "user question:",
+        "instruction:",
+        "conversation memory:",
+        "book title:",
+        "book author:",
+        "book context:",
+    ]
+    return any(marker in low for marker in bad_markers)
+
+
+def _book_fallback(
+    *,
+    book_title: str,
+    book_author: str,
+    book_description: str,
+    user_message: str,
+) -> str:
+    title = (book_title or "").strip() or "ce livre"
+    author = (book_author or "").strip()
+    user_low = (user_message or "").lower()
+    desc = _sanitize_text(book_description or "")
+
+    if "auteur" in user_low or "author" in user_low:
+        if author:
+            return f"L'auteur de {title} est {author}."
+        return f"Je n'ai pas l'auteur exact pour {title} dans le contexte actuel."
+
+    if "résum" in user_low or "resum" in user_low or "summary" in user_low:
+        if desc:
+            pieces = [x.strip() for x in re.split(r"[.!?]+", desc) if x.strip()]
+            brief = ". ".join(pieces[:2]).strip()
+            if brief:
+                if not brief.endswith("."):
+                    brief += "."
+                return _sanitize_text(f"Résumé rapide de {title}: {brief}")
+        author_part = f" de {author}" if author else ""
+        return (
+            f"Résumé rapide de {title}: c'est une oeuvre{author_part} "
+            "centrée sur des thèmes humains et existentiels."
+        )
+
+    if desc:
+        return _sanitize_text(f"Contexte utile sur {title}: {desc[:420]}")
+    return f"Je peux t'aider sur {title} (résumé, auteur, thèmes). Pose une question précise."
+
+
 def _candidate_base_urls(configured_base_url: str) -> list[str]:
     base = (configured_base_url or "").strip().rstrip("/")
     if not base:
@@ -71,13 +122,16 @@ async def ask_ollama(
         context = "Contexte détaillé indisponible."
 
     # Keep prompts compact to fit small CPU-only models.
+    # Ignore assistant history to avoid feedback loops when a bad answer is stored.
     history_lines: list[str] = []
-    for item in (history or [])[-6:]:
-        role = "Assistant" if item.get("role") == "assistant" else "User"
+    for item in (history or [])[-8:]:
+        if item.get("role") == "assistant":
+            continue
+        role = "User"
         content = (item.get("content") or "").strip()
         if not content:
             continue
-        history_lines.append(f"{role}: {content[:220]}")
+        history_lines.append(f"{role}: {content[:160]}")
     history_block = "\n".join(history_lines)
 
     prompt = (
@@ -110,7 +164,7 @@ async def ask_ollama(
                 resp.raise_for_status()
                 data = resp.json()
                 answer = _sanitize_text(str(data.get("response") or ""))
-                if answer:
+                if answer and not _looks_like_prompt_echo(answer):
                     return answer
             except Exception as exc:
                 errors.append(f"{base_url}: {exc}")
@@ -118,17 +172,19 @@ async def ask_ollama(
 
     fallback = book_description.strip()
     if fallback:
-        return _sanitize_text(f"Résumé/context: {fallback[:700]}")
+        return _book_fallback(
+            book_title=book_title,
+            book_author=book_author,
+            book_description=book_description,
+            user_message=user_message,
+        )
 
     if errors:
-        title = (book_title or "").strip() or "ce livre"
-        author = (book_author or "").strip()
-        author_part = f" par {author}" if author else ""
-        return _sanitize_text(
-            f"Je suis en mode secours pour le moment. "
-            f"Voici un résumé rapide de {title}{author_part}: "
-            "ce livre explore des thèmes humains essentiels avec une lecture accessible. "
-            "Je peux détailler personnages, thèmes et symboles selon ta question."
+        return _book_fallback(
+            book_title=book_title,
+            book_author=book_author,
+            book_description=book_description,
+            user_message=user_message,
         )
 
     return (

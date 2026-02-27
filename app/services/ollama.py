@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+import unicodedata
 from urllib.parse import urlparse
 
 import httpx
@@ -22,6 +23,16 @@ def violates_copyright_guardrails(user_message: str) -> bool:
 
 def _sanitize_text(text: str) -> str:
     return _CTRL_RE.sub("", (text or "")).strip()
+
+
+def _normalize_intent_text(text: str) -> str:
+    clean = _sanitize_text(text).lower()
+    if not clean:
+        return ""
+    clean = unicodedata.normalize("NFD", clean)
+    clean = "".join(ch for ch in clean if unicodedata.category(ch) != "Mn")
+    clean = re.sub(r"[^a-z0-9']+", " ", clean)
+    return re.sub(r"\s+", " ", clean).strip()
 
 
 def _clean_history_message(text: str) -> str:
@@ -83,6 +94,141 @@ def _looks_like_low_quality_answer(answer: str) -> bool:
     if len(low.split()) <= 2:
         return True
     return False
+
+
+def _detect_intents(user_message: str) -> dict[str, bool]:
+    norm = _normalize_intent_text(user_message)
+    wants_summary = any(
+        key in norm
+        for key in [
+            "resume",
+            "resumer",
+            "summary",
+            "synopsis",
+            "de quoi parle",
+        ]
+    )
+    wants_author = any(
+        key in norm
+        for key in [
+            "auteur",
+            "author",
+            "ecrivain",
+            "ecrit",
+            "qui a ecrit",
+            "qui est l auteur",
+            "autheur",
+        ]
+    )
+    if not wants_author and wants_summary and "l autre" in norm:
+        wants_author = True
+
+    wants_themes = any(
+        key in norm
+        for key in [
+            "theme",
+            "themes",
+            "these principal",
+            "sujet principal",
+            "idee principale",
+        ]
+    )
+    wants_greeting = bool(re.search(r"\b(salut|bonjour|bonsoir|hello|hey|hi|coucou|yo)\b", norm))
+    wants_thanks = "merci" in norm
+
+    return {
+        "summary": wants_summary,
+        "author": wants_author,
+        "themes": wants_themes,
+        "greeting": wants_greeting,
+        "thanks": wants_thanks,
+    }
+
+
+def _summary_answer(*, book_title: str, book_author: str, book_description: str) -> str:
+    title = (book_title or "").strip() or "ce livre"
+    author = (book_author or "").strip()
+    desc = _sanitize_text(book_description or "")
+    if desc:
+        pieces = [x.strip() for x in re.split(r"[.!?]+", desc) if x.strip()]
+        brief = ". ".join(pieces[:2]).strip()
+        if brief:
+            if not brief.endswith("."):
+                brief += "."
+            return _sanitize_text(f"Résumé rapide de {title}: {brief}")
+    author_part = f" de {author}" if author else ""
+    return (
+        f"Résumé rapide de {title}: c'est une oeuvre{author_part} "
+        "centrée sur des thèmes humains et existentiels."
+    )
+
+
+def _author_answer(*, book_title: str, book_author: str) -> str:
+    title = (book_title or "").strip() or "ce livre"
+    author = (book_author or "").strip()
+    if author:
+        return f"L'auteur de {title} est {author}."
+    return f"Je n'ai pas l'auteur exact pour {title} dans le contexte actuel."
+
+
+def _themes_answer(*, book_title: str, book_description: str, book_categories: list[str] | None) -> str:
+    title = (book_title or "").strip() or "ce livre"
+    desc = _sanitize_text(book_description or "")
+    if book_categories:
+        cats = ", ".join([c for c in book_categories if c])[:120]
+        if cats:
+            return f"Les thèmes principaux de {title}: {cats}."
+    if desc:
+        return _sanitize_text(f"Thèmes de {title}: {desc[:260]}")
+    return f"Je n'ai pas assez de détails pour lister les thèmes de {title}."
+
+
+def _compose_direct_answer(
+    *,
+    book_title: str,
+    book_author: str,
+    book_description: str,
+    book_categories: list[str] | None,
+    user_message: str,
+) -> str:
+    intents = _detect_intents(user_message)
+    title = (book_title or "").strip() or "ce livre"
+
+    if intents["greeting"] and not (intents["summary"] or intents["author"] or intents["themes"]):
+        return f"Salut. Je peux t'aider sur {title}: résumé, auteur, thèmes et personnages."
+
+    if intents["thanks"] and not (intents["summary"] or intents["author"] or intents["themes"]):
+        return "Avec plaisir. Pose-moi une question sur le livre."
+
+    parts: list[str] = []
+    if intents["author"]:
+        parts.append(_author_answer(book_title=book_title, book_author=book_author))
+    if intents["summary"]:
+        parts.append(
+            _summary_answer(
+                book_title=book_title,
+                book_author=book_author,
+                book_description=book_description,
+            )
+        )
+    if intents["themes"]:
+        parts.append(
+            _themes_answer(
+                book_title=book_title,
+                book_description=book_description,
+                book_categories=book_categories,
+            )
+        )
+    if parts:
+        return " ".join(parts)
+
+    return _book_fallback(
+        book_title=book_title,
+        book_author=book_author,
+        book_description=book_description,
+        user_message=user_message,
+        book_categories=book_categories,
+    )
 
 
 def _book_fallback(
@@ -249,13 +395,16 @@ async def ask_ollama(
             "Je peux donner un résumé, les thèmes et une analyse."
         )
 
-    direct = _book_fallback(
+    direct = _compose_direct_answer(
         book_title=book_title,
         book_author=book_author,
         book_description=book_description,
         user_message=user_message,
         book_categories=book_categories,
     )
+    intents = _detect_intents(user_message)
+    if intents["greeting"] or intents["thanks"] or intents["author"] or intents["summary"] or intents["themes"]:
+        return direct
     system_prompt = _build_system_prompt(
         book_title=book_title,
         book_author=book_author,

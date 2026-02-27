@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import re
 import unicodedata
+from difflib import SequenceMatcher
 from urllib.parse import urlparse
 
 import httpx
@@ -33,6 +34,56 @@ def _normalize_intent_text(text: str) -> str:
     clean = "".join(ch for ch in clean if unicodedata.category(ch) != "Mn")
     clean = re.sub(r"[^a-z0-9']+", " ", clean)
     return re.sub(r"\s+", " ", clean).strip()
+
+
+def _intent_tokens(text: str) -> list[str]:
+    norm = _normalize_intent_text(text)
+    return [token for token in norm.split() if token]
+
+
+def _is_similar_token(left: str, right: str, threshold: float = 0.82) -> bool:
+    if not left or not right:
+        return False
+    if left == right:
+        return True
+    if abs(len(left) - len(right)) > 3:
+        return False
+    return SequenceMatcher(a=left, b=right).ratio() >= threshold
+
+
+def _token_matches(token: str, candidates: list[str]) -> bool:
+    return any(_is_similar_token(token, candidate) for candidate in candidates)
+
+
+def _contains_fuzzy_phrase(tokens: list[str], phrase: str) -> bool:
+    phrase_tokens = [token for token in _normalize_intent_text(phrase).split() if token]
+    if not phrase_tokens:
+        return False
+    cursor = 0
+    for phrase_token in phrase_tokens:
+        found = False
+        for index in range(cursor, len(tokens)):
+            if _is_similar_token(tokens[index], phrase_token):
+                cursor = index + 1
+                found = True
+                break
+        if not found:
+            return False
+    return True
+
+
+def _history_user_messages(history: list[dict[str, str]] | None, limit: int = 3) -> list[str]:
+    items: list[str] = []
+    for item in reversed(history or []):
+        if (item.get("role") or "").strip().lower() != "user":
+            continue
+        content = _clean_history_message(item.get("content") or "")
+        if content:
+            items.append(content)
+        if len(items) >= limit:
+            break
+    items.reverse()
+    return items
 
 
 def _clean_history_message(text: str) -> str:
@@ -96,45 +147,57 @@ def _looks_like_low_quality_answer(answer: str) -> bool:
     return False
 
 
-def _detect_intents(user_message: str) -> dict[str, bool]:
+def _detect_intents(
+    user_message: str,
+    history: list[dict[str, str]] | None = None,
+) -> dict[str, bool]:
     norm = _normalize_intent_text(user_message)
-    wants_summary = any(
-        key in norm
-        for key in [
-            "resume",
-            "resumer",
-            "summary",
-            "synopsis",
-            "de quoi parle",
-        ]
-    )
-    wants_author = any(
-        key in norm
-        for key in [
-            "auteur",
-            "author",
-            "ecrivain",
-            "ecrit",
-            "qui a ecrit",
-            "qui est l auteur",
-            "autheur",
-        ]
-    )
-    if not wants_author and wants_summary and "l autre" in norm:
-        wants_author = True
+    tokens = _intent_tokens(user_message)
 
-    wants_themes = any(
-        key in norm
-        for key in [
-            "theme",
-            "themes",
-            "these principal",
-            "sujet principal",
-            "idee principale",
-        ]
+    recent_user_messages = _history_user_messages(history, limit=2)
+    context_norm = " ".join([_normalize_intent_text(msg) for msg in recent_user_messages if msg]).strip()
+    context_tokens: list[str] = []
+    for msg in recent_user_messages:
+        context_tokens.extend(_intent_tokens(msg))
+
+    is_short_followup = len(tokens) <= 4 and (
+        norm.startswith("et ")
+        or norm in {"et", "ok", "oui", "non", "l autre", "lautre", "l auteur", "auteur", "resume", "resumer"}
     )
-    wants_greeting = bool(re.search(r"\b(salut|bonjour|bonsoir|hello|hey|hi|coucou|yo)\b", norm))
-    wants_thanks = "merci" in norm
+
+    summary_token_roots = ["resume", "resumer", "summary", "synopsis", "intrigue", "histoire", "bref"]
+    summary_phrases = ["de quoi parle", "fais un resume", "donne moi un resume", "resume moi"]
+    wants_summary = (
+        any(_token_matches(token, summary_token_roots) for token in tokens)
+        or any(_contains_fuzzy_phrase(tokens, phrase) for phrase in summary_phrases)
+        or (is_short_followup and any(_token_matches(token, summary_token_roots) for token in context_tokens))
+    )
+
+    author_token_roots = ["auteur", "autheur", "author", "ecrivain", "ecrit", "nom"]
+    author_phrases = ["qui a ecrit", "qui est l auteur", "c est qui l auteur", "donne l auteur", "c est qui l ecrivain"]
+    wants_author = (
+        any(_token_matches(token, author_token_roots) for token in tokens)
+        or any(_contains_fuzzy_phrase(tokens, phrase) for phrase in author_phrases)
+        or ("l autre" in norm and wants_summary)
+        or ("lautre" in norm and wants_summary)
+    )
+    if not wants_author and is_short_followup and context_norm:
+        if "auteur" in context_norm or "author" in context_norm:
+            wants_author = True
+
+    theme_token_roots = ["theme", "themes", "idee", "message", "morale", "sujet"]
+    theme_phrases = ["theme principal", "themes principaux", "idee principale", "sujet principal"]
+    wants_themes = (
+        any(_token_matches(token, theme_token_roots) for token in tokens)
+        or any(_contains_fuzzy_phrase(tokens, phrase) for phrase in theme_phrases)
+        or (is_short_followup and any(_token_matches(token, theme_token_roots) for token in context_tokens))
+    )
+
+    greeting_roots = ["salut", "bonjour", "bonsoir", "hello", "hey", "hi", "coucou", "yo", "cc"]
+    wants_greeting = any(_token_matches(token, greeting_roots) for token in tokens[:3])
+
+    thanks_roots = ["merci", "thanks", "thx"]
+    wants_thanks = any(_token_matches(token, thanks_roots) for token in tokens)
 
     return {
         "summary": wants_summary,
@@ -190,8 +253,9 @@ def _compose_direct_answer(
     book_description: str,
     book_categories: list[str] | None,
     user_message: str,
+    history: list[dict[str, str]] | None = None,
 ) -> str:
-    intents = _detect_intents(user_message)
+    intents = _detect_intents(user_message, history)
     title = (book_title or "").strip() or "ce livre"
 
     if intents["greeting"] and not (intents["summary"] or intents["author"] or intents["themes"]):
@@ -401,8 +465,9 @@ async def ask_ollama(
         book_description=book_description,
         user_message=user_message,
         book_categories=book_categories,
+        history=history,
     )
-    intents = _detect_intents(user_message)
+    intents = _detect_intents(user_message, history)
     if intents["greeting"] or intents["thanks"] or intents["author"] or intents["summary"] or intents["themes"]:
         return direct
     system_prompt = _build_system_prompt(
